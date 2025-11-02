@@ -14,11 +14,14 @@
 #include <thread>
 #include "arp.cpp"
 
+
 /****** Global variables  ******/
 uint8_t FAKE_MAC[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 };
 uint8_t FAKE_IP[4]  = { 192, 168, 0, 202 };
 uint8_t REAL_CONTAINER_IP[4]  = {10, 20, 0, 20};
-static uint8_t LAST_PEER_MAC[6];
+
+
+static uint8_t LAST_PEER_MAC[6]; // костыль: убрать на будущее (race condition)
 const char *IFACE1 = "eth0";
 const char *IFACE2 = "veth0";
 
@@ -108,34 +111,31 @@ void packet_handler_veth0(u_char *user,
     // If just an IPV4 then rewrite the IP of destination (the container runs in its own network)
     if (ethertype == 0x0800) {
         ipv4_hdr *ip = (ipv4_hdr*)(buf + sizeof(eth_hdr));
-
-        if (memcmp(ip->src, REAL_CONTAINER_IP, 4) != 0){
+        
+        if (memcmp(ip->src, REAL_CONTAINER_IP, 4) != 0){ // The packet is from unknown ip
             return; // not from 10.20.0.20
-            std::cout << "Disabling mirroring" << std::endl;
         }
-            
+
+        if (memcmp(ip->dst, REAL_CONTAINER_IP, 4) == 0){ // The packet is in direction to veth 
+            return; 
+        }
+        
+
+        uint8_t dst_mac[6];
+        bool have_mac = arp_lookup(ip->dst, dst_mac);
+        if (have_mac) {
+            std::memcpy(eth->dst, dst_mac, 6);
+        } else {
+            std::cout << "No entry in arp table for IP: ";
+            print_ip(ip->dst);
+            std::cout << std::endl;
+            // TODO SEND ARP REQUEST
+        }
+
         // rewrite to 192.168.0.202
         memcpy(ip->src, FAKE_IP, 4);
         memcpy(eth->src, FAKE_MAC, 6);
-        memcpy(eth->dst, LAST_PEER_MAC, 6);
 
-        std::cout << std::endl << "PACKET HANDLER DIRECTION FROM VETH" << std::endl << std::endl;
-        std::cout << "SRC MAC: ";
-        print_mac(eth->src);
-        std::cout << std::endl;
-
-        std::cout << "DST MAC: ";
-        print_mac(eth->dst);
-        std::cout << std::endl;
-
-        std::cout << "SRC IP: ";
-        print_ip(ip->src);
-        std::cout << std::endl;
-
-        std::cout << "DST IP: ";
-        print_ip(ip->dst);
-        std::cout << std::endl;
-        std::cout << "-----------------------------------" << std::endl << std::endl;
 
         ip->checksum = 0;
         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
@@ -165,7 +165,9 @@ void packet_handler_eth0(u_char *user,
     // Check if the packet is ARP. If it is then the program itself has to answer
     if (ethertype == 0x0806) {
         arp_hdr *arp = (arp_hdr*)(buf + sizeof(eth_hdr));
-        memcpy(LAST_PEER_MAC, arp->sha, 6);
+        
+        arp_update(arp->spa, arp->sha);
+
         if (ntohs(arp->oper) == 1 && memcmp(arp->tpa, FAKE_IP, 4) == 0) {
             std::cout << "\n[ARP] who-has 192.168.0.202 from ";
             print_ip(arp->spa); std::cout << "\n";
@@ -181,7 +183,6 @@ void packet_handler_eth0(u_char *user,
 
         if (memcmp(ip->dst, FAKE_IP, 4) != 0)
             return; // not for 192.168.0.202
-        memcpy(LAST_PEER_MAC, eth->src, 6);
         // rewrite to 10.20.0.20
         memcpy(ip->dst, REAL_CONTAINER_IP, 4);
 
@@ -253,172 +254,3 @@ int main() {
     return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // --- Packet handler ---
-// void packet_handler(u_char *user, const struct pcap_pkthdr *header, const u_char *packet) {
-//     pcap_t *handle = *reinterpret_cast<pcap_t**>(user);
-//     if (header->len < sizeof(eth_hdr)) return;
-
-//     const eth_hdr *eth = reinterpret_cast<const eth_hdr*>(packet);
-//     uint16_t ethertype = ntohs(eth->ethertype);
-
-//     // ARP
-//     if (ethertype == 0x0806) {
-//         const arp_hdr *arp = reinterpret_cast<const arp_hdr*>(packet + sizeof(eth_hdr));
-//         if (ntohs(arp->oper) == 1 && memcmp(arp->tpa, FAKE_IP, 4) == 0) {
-//             std::cout << "\n[ARP] Request for my IP from ";
-//             print_ip(arp->spa); std::cout << " ("; print_mac(arp->sha); std::cout << ")\n";
-//             send_arp_reply(handle, arp->sha, arp->spa);
-//         }
-//         return;
-//     }
-
-//     // IPv4
-//     if (ethertype == 0x0800) {
-//         const ipv4_hdr *ip = reinterpret_cast<const ipv4_hdr*>(packet + sizeof(eth_hdr));
-
-//         // Check destination IP == FAKE_IP
-//         if (memcmp(ip->dst, FAKE_IP, 4) != 0) return;
-
-//         std::cout << "\n[IPv4] Packet to me | From ";
-//         print_ip(ip->src);
-//         std::cout << " -> ";
-//         print_ip(ip->dst);
-
-//         switch (ip->protocol) {
-//             case 1:  std::cout << " (ICMP)"; break;
-//             case 6:  std::cout << " (TCP)"; break;
-//             case 17: std::cout << " (UDP)"; break;
-//             default: std::cout << " (Proto " << (int)ip->protocol << ")"; break;
-//         }
-//         std::cout << " | Length: " << ntohs(ip->total_length) << " bytes\n";
-//                 // we know it's IPv4 and destined to us
-//         ipv4_hdr *ip = (ipv4_hdr*)(packet + sizeof(eth_hdr));
-
-//         // rewrite dst IP to 10.20.0.20
-//         uint8_t new_dst[4] = {10, 20, 0, 20};
-//         memcpy(ip->dst, new_dst, 4);
-
-//         // recalc IP header checksum
-//         ip->checksum = 0;
-//         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
-//         ip->checksum = ip_checksum(ip, ip_hdr_len);
-//         send_to_veth(packet, header->len, "veth0");
-
-//         return;
-//     }
-
-//     // Other protocols (IPv6, etc.)
-//     std::cout << "[Other ethertype 0x" << std::hex << ethertype << std::dec << "]\n";
-// }
-
-
-// void packet_handler_from_container(u_char *user, const struct pcap_pkthdr *header, const u_char *packet) {
-//     std::cout << "Traffic from container" << std::endl;
-//     const char *out_iface = "eth0";  // where to send it back
-//     send_to_veth(packet, header->len, out_iface);
-// }
-
-// void packet_handler_from_container(u_char *user,
-//                                    const struct pcap_pkthdr *header,
-//                                    const u_char *packet)
-// {
-//     if (header->len > 1500 || header->len < sizeof(eth_hdr)) return;
-
-//     // make writable copy
-//     uint8_t buf[1500];
-//     size_t len = header->len;
-//     memcpy(buf, packet, len);
-
-//     eth_hdr *eth = (eth_hdr*)buf;
-//     uint16_t ethertype = ntohs(eth->ethertype);
-
-//     std::cout << "\n[From container] ";
-
-//     if (ethertype == 0x0800) {          // IPv4
-//         ipv4_hdr *ip = (ipv4_hdr*)(buf + sizeof(eth_hdr));
-
-//         // print before rewrite
-//         std::cout << "IPv4 | From ";
-//         print_ip(ip->src);
-//         std::cout << " -> ";
-//         print_ip(ip->dst);
-//         std::cout << " | Proto: " << (int)ip->protocol
-//                   << " | Length: " << ntohs(ip->total_length) << " bytes\n";
-
-//         // --- SNAT: make it look like it comes from our fake IP ---
-//         memcpy(ip->src, FAKE_IP, 4);
-//         ip->checksum = 0;
-//         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
-//         ip->checksum = ip_checksum(ip, ip_hdr_len);
-
-//         // optional: also spoof MAC
-//         memcpy(eth->src, FAKE_MAC, 6);
-
-//         // send out
-//         if (send_to_interface(buf, len, "eth0") == 0)
-//             std::cout << "[Forwarded] to eth0\n";
-//         else
-//             std::cerr << "[Error] Failed to send to eth0\n";
-//     }
-//     else if (ethertype == 0x0806) {  // ARP
-//         const arp_hdr *arp = reinterpret_cast<const arp_hdr*>(packet + sizeof(eth_hdr));
-//         std::cout << "ARP | " 
-//                   << (ntohs(arp->oper) == 1 ? "Request" : "Reply") 
-//                   << " | From ";
-//         print_ip(arp->spa);
-//         std::cout << " ("; print_mac(arp->sha); std::cout << ")";
-//         std::cout << " -> ";
-//         print_ip(arp->tpa);
-//         std::cout << " ("; print_mac(arp->tha); std::cout << ")" << std::endl;
-//     }
-    
-//     else {
-//         std::cout << "Other ethertype: 0x" << std::hex << ethertype << std::dec 
-//                   << " | Packet length: " << header->len << " bytes" << std::endl;
-//     }
-
-//     // Forward packet back to host side (eth0)
-//     const char *out_iface = "eth0";
-//     if (send_to_interface(packet, header->len, out_iface) == 0) {
-//         std::cout << "[Forwarded] to " << out_iface << std::endl;
-//     } else {
-//         std::cerr << "[Error] Failed to send to " << out_iface << std::endl;
-//     }
-// }
