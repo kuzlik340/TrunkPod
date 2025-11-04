@@ -16,14 +16,12 @@
 
 
 /****** Global variables  ******/
-uint8_t FAKE_MAC[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 };
+uint8_t FAKE_MAC[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 }; 
 uint8_t FAKE_IP[4]  = { 192, 168, 0, 202 };
 uint8_t REAL_CONTAINER_IP[4]  = {10, 20, 0, 20};
 
-
-static uint8_t LAST_PEER_MAC[6]; // костыль: убрать на будущее (race condition)
 const char *IFACE1 = "eth0";
-const char *IFACE2 = "veth0";
+const char *IFACE2 = "podman1"; /* Contain entire network */ //podman1
 
 /* Helper functions to print out info  */
 void print_mac(const uint8_t *mac) {
@@ -55,6 +53,17 @@ static uint16_t ip_checksum(const void *vdata, size_t length)
 
 // --- Ethernet header definitions ---
 #pragma pack(push, 1) // Set the 1 byte boundary (not alligned)
+struct tcp_hdr {
+    uint16_t src_port;
+    uint16_t dst_port;
+    uint32_t seq;
+    uint32_t ack;
+    uint8_t  data_offset_reserved;
+    uint8_t  flags;
+    uint16_t window;
+    uint16_t checksum;
+    uint16_t urgptr;
+};
 
 struct ipv4_hdr {
     uint8_t  ihl_version;
@@ -70,6 +79,30 @@ struct ipv4_hdr {
 };
 #pragma pack(pop)
 
+
+static uint16_t csum16(const uint8_t* data, size_t len, uint32_t start = 0)
+{
+    uint32_t acc = start;
+    for (size_t i = 0; i + 1 < len; i += 2)
+        acc += (data[i] << 8) | data[i+1];
+    if (len & 1)
+        acc += data[len-1] << 8;
+    while (acc >> 16)
+        acc = (acc & 0xFFFF) + (acc >> 16);
+    return (uint16_t)~acc;  
+}
+
+static uint16_t tcp_checksum(const ipv4_hdr* ip, const tcp_hdr* tcp, size_t tcp_len)
+{
+    uint32_t acc = 0;
+    acc += (ip->src[0] << 8) | ip->src[1];
+    acc += (ip->src[2] << 8) | ip->src[3];
+    acc += (ip->dst[0] << 8) | ip->dst[1];
+    acc += (ip->dst[2] << 8) | ip->dst[3];
+    acc += 0x0006;           
+    acc += tcp_len;          
+    return csum16((const uint8_t*)tcp, tcp_len, acc);
+}
 
 int send_to_interface(const uint8_t *frame, size_t len, const char *veth_name) {
     int sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -92,12 +125,13 @@ int send_to_interface(const uint8_t *frame, size_t len, const char *veth_name) {
     return 0;
 }
 
+
+/* Changing SRC IP and MAC and DST MAC */
 /* Callback for every capture packet on the veth0 (container endpoint in OS) */
 void packet_handler_veth0(u_char *user,
                     const struct pcap_pkthdr *header,
                     const u_char *packet)
 {
-
     pcap_t *handle = *reinterpret_cast<pcap_t**>(user);
 
     if (header->len > 1500) return;     // Ignore JUMBO frames
@@ -136,17 +170,39 @@ void packet_handler_veth0(u_char *user,
         memcpy(ip->src, FAKE_IP, 4);
         memcpy(eth->src, FAKE_MAC, 6);
 
+        std::cout << "PACKET HANDLER DIRECTION FROM PODMAN TO ETH0" << std::endl << std::endl;
+        std::cout << "SRC MAC: ";
+        print_mac(eth->src);
+        std::cout << std::endl;
+
+        std::cout << "DST MAC: ";
+        print_mac(eth->dst);
+        std::cout << std::endl;
+
+        std::cout << "SRC IP: ";
+        print_ip(ip->src);
+        std::cout << std::endl;
+
+        std::cout << "DST IP: ";
+        print_ip(ip->dst);
+        std::cout << std::endl;
+        std::cout << "-----------------------------------" << std::endl << std::endl;
 
         ip->checksum = 0;
         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
         ip->checksum = ip_checksum(ip, ip_hdr_len);
-
-        send_to_interface(buf, len, "eth0");
+        if (ip->protocol == 6) { // TCP
+            tcp_hdr *tcp = (tcp_hdr*)((uint8_t*)ip + ((ip->ihl_version & 0x0F) * 4));
+            size_t tcp_len = ntohs(ip->total_length) - ((ip->ihl_version & 0x0F) * 4);
+            tcp->checksum = 0;
+            tcp->checksum = htons(tcp_checksum(ip, tcp, tcp_len));
+        }
+        send_to_interface(buf, len, IFACE1);
         return;
     }
 }
 
-
+/* Changing DST IP */
 /* Callback for every capture packet on the physical eth0 */
 void packet_handler_eth0(u_char *user,
                     const struct pcap_pkthdr *header,
@@ -190,7 +246,7 @@ void packet_handler_eth0(u_char *user,
         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
         ip->checksum = ip_checksum(ip, ip_hdr_len);
 
-        std::cout << "PACKET HANDLER DIRECTION FROM VETH" << std::endl << std::endl;
+        std::cout << "PACKET HANDLER DIRECTION FROM ETH0 TO PODMAN" << std::endl << std::endl;
         std::cout << "SRC MAC: ";
         print_mac(eth->src);
         std::cout << std::endl;
@@ -207,7 +263,13 @@ void packet_handler_eth0(u_char *user,
         print_ip(ip->dst);
         std::cout << std::endl;
         std::cout << "-----------------------------------" << std::endl << std::endl;
-        send_to_interface(buf, len, "veth0");
+        if (ip->protocol == 6) { // TCP
+            tcp_hdr *tcp = (tcp_hdr*)((uint8_t*)ip + ((ip->ihl_version & 0x0F) * 4));
+            size_t tcp_len = ntohs(ip->total_length) - ((ip->ihl_version & 0x0F) * 4);
+            tcp->checksum = 0;
+            tcp->checksum = htons(tcp_checksum(ip, tcp, tcp_len));
+        }
+        send_to_interface(buf, len, IFACE2);
         return;
     }
 }
