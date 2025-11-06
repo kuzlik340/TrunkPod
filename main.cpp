@@ -13,12 +13,15 @@
 #include <iostream>
 #include <thread>
 #include "arp.cpp"
+#include "cli.cpp"
 
 
 /****** Global variables  ******/
 uint8_t FAKE_MAC[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01 }; 
 uint8_t FAKE_IP[4]  = { 192, 168, 0, 202 };
 uint8_t REAL_CONTAINER_IP[4]  = {10, 20, 0, 20};
+bool debug_output = false;
+
 
 const char *IFACE1 = "eth0";
 const char *IFACE2 = "podman1"; /* Contain entire network */ //podman1
@@ -163,30 +166,31 @@ void packet_handler_veth0(u_char *user,
             std::cout << "No entry in arp table for IP: ";
             print_ip(ip->dst);
             std::cout << std::endl;
-            // TODO SEND ARP REQUEST
+            // TODO SEND ARP REQUEST or maybe nuh?
         }
 
         // rewrite to 192.168.0.202
         memcpy(ip->src, FAKE_IP, 4);
         memcpy(eth->src, FAKE_MAC, 6);
+        if(debug_output){
+            std::cout << "PACKET HANDLER DIRECTION FROM PODMAN TO ETH0" << std::endl << std::endl;
+            std::cout << "SRC MAC: ";
+            print_mac(eth->src);
+            std::cout << std::endl;
 
-        std::cout << "PACKET HANDLER DIRECTION FROM PODMAN TO ETH0" << std::endl << std::endl;
-        std::cout << "SRC MAC: ";
-        print_mac(eth->src);
-        std::cout << std::endl;
+            std::cout << "DST MAC: ";
+            print_mac(eth->dst);
+            std::cout << std::endl;
 
-        std::cout << "DST MAC: ";
-        print_mac(eth->dst);
-        std::cout << std::endl;
+            std::cout << "SRC IP: ";
+            print_ip(ip->src);
+            std::cout << std::endl;
 
-        std::cout << "SRC IP: ";
-        print_ip(ip->src);
-        std::cout << std::endl;
-
-        std::cout << "DST IP: ";
-        print_ip(ip->dst);
-        std::cout << std::endl;
-        std::cout << "-----------------------------------" << std::endl << std::endl;
+            std::cout << "DST IP: ";
+            print_ip(ip->dst);
+            std::cout << std::endl;
+            std::cout << "-----------------------------------" << std::endl << std::endl;
+        }
 
         ip->checksum = 0;
         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
@@ -245,24 +249,25 @@ void packet_handler_eth0(u_char *user,
         ip->checksum = 0;
         size_t ip_hdr_len = (ip->ihl_version & 0x0F) * 4;
         ip->checksum = ip_checksum(ip, ip_hdr_len);
+        if(debug_output){
+            std::cout << "PACKET HANDLER DIRECTION FROM ETH0 TO PODMAN" << std::endl << std::endl;
+            std::cout << "SRC MAC: ";
+            print_mac(eth->src);
+            std::cout << std::endl;
 
-        std::cout << "PACKET HANDLER DIRECTION FROM ETH0 TO PODMAN" << std::endl << std::endl;
-        std::cout << "SRC MAC: ";
-        print_mac(eth->src);
-        std::cout << std::endl;
+            std::cout << "DST MAC: ";
+            print_mac(eth->dst);
+            std::cout << std::endl;
 
-        std::cout << "DST MAC: ";
-        print_mac(eth->dst);
-        std::cout << std::endl;
+            std::cout << "SRC IP: ";
+            print_ip(ip->src);
+            std::cout << std::endl;
 
-        std::cout << "SRC IP: ";
-        print_ip(ip->src);
-        std::cout << std::endl;
-
-        std::cout << "DST IP: ";
-        print_ip(ip->dst);
-        std::cout << std::endl;
-        std::cout << "-----------------------------------" << std::endl << std::endl;
+            std::cout << "DST IP: ";
+            print_ip(ip->dst);
+            std::cout << std::endl;
+            std::cout << "-----------------------------------" << std::endl << std::endl;
+        }
         if (ip->protocol == 6) { // TCP
             tcp_hdr *tcp = (tcp_hdr*)((uint8_t*)ip + ((ip->ihl_version & 0x0F) * 4));
             size_t tcp_len = ntohs(ip->total_length) - ((ip->ihl_version & 0x0F) * 4);
@@ -277,6 +282,7 @@ void packet_handler_eth0(u_char *user,
 
 
 int main() {
+    print_logo();
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle_eth0 = pcap_open_live(IFACE1, BUFSIZ, 1, 2, errbuf);   // Open interface IFACE1 for capturing in PROMISC mode
     pcap_t *handle_veth = pcap_open_live(IFACE2, BUFSIZ, 1, 2, errbuf);   // Open interface IFACE2 for capturing in PROMISC mode
@@ -306,6 +312,10 @@ int main() {
 
     std::thread t2([&]() {
         pcap_loop(handle_veth, 0, packet_handler_veth0, reinterpret_cast<u_char*>(&handle_veth));
+    });
+
+    std::thread t3([&]() {
+        prompt_loop();
     });
 
     t1.join();

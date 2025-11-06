@@ -106,4 +106,26 @@ inline bool send_arp_reply(pcap_t *handle,
     return true;
 }
 
+inline void print_arp_table() {
+    std::shared_lock lk(g_arp_lock);
+
+    std::cout << "\n=== ARP Table ===\n";
+    for (const auto& [ip_u32, mac] : g_arp_table) {
+        uint8_t ip_bytes[4] = {
+            static_cast<uint8_t>((ip_u32 >> 24) & 0xFF),
+            static_cast<uint8_t>((ip_u32 >> 16) & 0xFF),
+            static_cast<uint8_t>((ip_u32 >> 8)  & 0xFF),
+            static_cast<uint8_t>((ip_u32)       & 0xFF),
+        };
+
+        std::cout << "- IP: ";
+        print_ip(ip_bytes);
+        std::cout << " | MAC: ";
+        print_mac(mac.b);
+        std::cout << '\n';
+    }
+    std::cout << "=================\n\n";
+}
+
+
 #endif // ARP_UTILS_H
