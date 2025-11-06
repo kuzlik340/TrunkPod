@@ -22,9 +22,12 @@ uint8_t FAKE_IP[4]  = { 192, 168, 0, 202 };
 uint8_t REAL_CONTAINER_IP[4]  = {10, 20, 0, 20};
 bool debug_output = false;
 
-
+int sock_eth0 = -1;
+int sock_podman1 = -1;
 const char *IFACE1 = "eth0";
 const char *IFACE2 = "podman1"; /* Contain entire network */ //podman1
+int ifindex_eth0 = -1;
+int ifindex_podman1 = -1;
 
 /* Helper functions to print out info  */
 void print_mac(const uint8_t *mac) {
@@ -107,24 +110,16 @@ static uint16_t tcp_checksum(const ipv4_hdr* ip, const tcp_hdr* tcp, size_t tcp_
     return csum16((const uint8_t*)tcp, tcp_len, acc);
 }
 
-int send_to_interface(const uint8_t *frame, size_t len, const char *veth_name) {
-    int sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-    if (sock < 0) {
-        perror("socket");
-        return -1;
-    }
-
+int send_to_interface(int sock, int if_index, const uint8_t *frame, size_t len) {
     struct sockaddr_ll device{};
-    device.sll_ifindex = if_nametoindex(veth_name);
+    device.sll_ifindex = if_index;
     device.sll_family = AF_PACKET;
     device.sll_protocol = htons(ETH_P_ALL);
 
     if (sendto(sock, frame, len, 0, (struct sockaddr*)&device, sizeof(device)) < 0) {
         perror("sendto");
-        close(sock);
         return -1;
     }
-    close(sock);
     return 0;
 }
 
@@ -201,7 +196,7 @@ void packet_handler_veth0(u_char *user,
             tcp->checksum = 0;
             tcp->checksum = htons(tcp_checksum(ip, tcp, tcp_len));
         }
-        send_to_interface(buf, len, IFACE1);
+        send_to_interface(sock_eth0, ifindex_eth0, buf, len);
         return;
     }
 }
@@ -274,7 +269,7 @@ void packet_handler_eth0(u_char *user,
             tcp->checksum = 0;
             tcp->checksum = htons(tcp_checksum(ip, tcp, tcp_len));
         }
-        send_to_interface(buf, len, IFACE2);
+        send_to_interface(sock_podman1, ifindex_podman1, buf, len);
         return;
     }
 }
@@ -282,6 +277,21 @@ void packet_handler_eth0(u_char *user,
 
 
 int main() {
+    sock_eth0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    sock_podman1 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+
+    if (sock_eth0 < 0 || sock_podman1 < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    ifindex_eth0 = if_nametoindex(IFACE1);
+    ifindex_podman1 = if_nametoindex(IFACE2);
+
+    if (ifindex_eth0 == 0 || ifindex_podman1 == 0) {
+        perror("if_nametoindex");
+        return 1;
+    }
     print_logo();
     char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t *handle_eth0 = pcap_open_live(IFACE1, BUFSIZ, 1, 2, errbuf);   // Open interface IFACE1 for capturing in PROMISC mode
