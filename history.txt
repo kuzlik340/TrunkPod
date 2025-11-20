@@ -1,0 +1,100 @@
+  791  sudo ./setup_pods.sh 
+  792  sudo ./run_honeypot.sh 175.20.0.6 DA:FD:BE:EF:00:01 honeypot2
+  793  ip a
+  794  sudo ip link set dev eth0.20 promisc on
+  795  sudo sysctl -w net.ipv4.conf.hp1.arp_ignore=1
+  796  sudo sysctl -w net.ipv4.conf.hp1.arp_announce=2
+  797  sudo sysctl -w net.ipv4.conf.eth0.20.arp_filter=1
+  798  ip a
+  799  sudo podman rm -f -a
+  800  sudo reboot
+  801  history | grep sysctl
+  802  cd HoneyBridge/
+  803  ls
+  804  sudo ./setup_interfaces.sh 
+  805  sudo ./setup_pods.sh 
+  806  sudo sysctl -w net.ipv4.ip_forward=0
+  807  sudo sysctl -w net.ipv4.ip_forward=1
+  808  sudo ip addr add 192.168.20.60/32 dev eth0.20
+  809  git add .
+  810  git commit -m "Working prototype. Exposes MAC address of Raspberry PI"
+  811  git push
+  812  sudo ip link add name br20 type bridge
+  813  sudo ip link set br20 up
+  814  sudo ip link set eth0.20 master br20
+  815  sudo ip link add link br20 name hp0 type macvlan mode bridge
+  816  sudo tcpdump eth0.20
+  817  sudo tcpdump -i eth0.20
+  818  ip link add link br20 name hp0 type ipvlan mode l2
+  819  sudo ip link add link br20 name hp0 type ipvlan mode l2
+  820  sudo ip link del link br20 name hp0 
+  821  sudo ip link add link br20 name hp0 type ipvlan mode l2
+  822  ip link set hp0 up
+  823  sudo ip link set hp0 up
+  824  sudo ip link set hp0 address DA:FD:BE:EF:00:01
+  825  sudo ip link set hp0 down
+  826  sudo ip link set hp0 address DA:FD:BE:EF:00:01
+  827  ip addr add 192.168.20.60/32 dev hp0
+  828  sudo ip addr add 192.168.20.60/32 dev hp0
+  829  sudo podman rm -f -a
+  830  sudo reboot
+  831  cd HoneyBridge/
+  832  sudo ./setup_interfaces.sh 
+  833  sudo ip link add macvlan0 link eth0.20 type macvlan mode bridge
+  834  sudo ip link add macvlan1 link eth0.20 type macvlan mode bridge
+  835  sudo ip link set dev macvlan0 address DA:FD:BE:EF:00:01
+  836  sudo ip link set dev macvlan1 address DA:FD:BE:EF:00:02
+  837  sudo ip addr add 192.168.20.60/32 dev macvlan0
+  838  sudo ip addr add 192.168.30.70/32 dev macvlan1
+  839  sudo ip addr del 192.168.30.70/32 dev macvlan1
+  840  sudo ip link set del macvlan1 address DA:FD:BE:EF:00:02
+  841  sudo ip link del macvlan1 link eth0.20 type macvlan mode bridge
+  842  sudo ./setup_pods.sh 
+  843  sudo ip link set macvlan0 up
+  844  ip a
+  845  history | grep promisc
+  846  sudo ip link set eth0.20 promisc on
+  847  sudo tcpdump -i macvlan0
+  848  sudo tcpdump -i eth0.20
+  849  sudo ip route del 192.168.20.0/24 dev eth0.20
+  850  sudo ip route add 192.168.20.0/24 dev macvlan0
+  851  history | grep PREROUTING
+  852  sudo iptables -t nat -L PREROUTING -n -v
+  853  history | tail -n 40
+  854  sudo podman rm -f -a
+  855  sudo reboot
+  856  cd HoneyBridge/
+  857  ls
+  858  sudo ./setup_interfaces.sh 
+  859  sudo ./setup_pods.sh
+  860  sudo ip link add macvlan1 link eth0.20 type macvlan mode bridge
+  861  sudo ip link set dev macvlan1 address DA:FD:BE:EF:00:01
+  862  sudo ip addr add 192.168.20.60/32 dev macvlan1
+  863  sudo ip route add 192.168.10.0/24 dev macvlan1
+  864  sudo ip route add 192.168.20.0/24 dev macvlan1
+  865  sudo ip link set macvlan1 up
+  866  sudo ip route add 192.168.20.0/24 dev macvlan1
+  867  sudo sysctl -w net.ipv4.ip_forward=1
+  868  sudo podman rm -f -a
+  869  sudo reboot
+  870  cd HoneyBridge/
+  871  sudo ./setup_interfaces.sh 
+  872  sudo ./setup_pods.sh 
+  873  ip a
+  874  sudo podman ps -a
+  875  sudo ./run_honeypot.sh 175.20.0.7 DA:FD:BE:EF:00:02 honeypot3
+  876  sudo podman ps -a
+  877  sudo ip addr del 192.168.20.0/24 dev macvlan0
+  878  sudo ip addr del 192.168.20.0 dev macvlan0
+  879  sudo ip addr del 192.168.20.0/24 dev macvlan0
+  880  ip a
+  881  sudo ip addr add 192.168.20.60/32 dev macvlan0
+  882  sudo ip route del 192.168.20.0/24 dev macvlan0
+  883  sudo ip route del 192.168.20.0/24 dev macvlan1
+  884  ip a
+  885  ip route
+  886  ip a
+  887  sudo ip route add 192.168.20.1/32 dev macvlan0
+  888  sudo iptables -t nat -A PREROUTING -i eth0.20 -d 192.168.20.60 -j DNAT --to-destination 175.20.06
+  889  sudo iptables -t nat -A PREROUTING -i eth0.20 -d 192.168.20.60 -j DNAT --to-destination 175.20.0.6
+  890  history | tail -n 100 > history.txt

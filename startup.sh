@@ -25,9 +25,9 @@ iptables -t nat -A POSTROUTING -s 175.20.0.22 -d 192.168.30.0/24 -j SNAT --to-so
 sudo sysctl -w net.ipv4.ip_forward=1
 
 
-#TODO JSON parser / CLI (Example docker-compose -> yaml)
+#TODO JSON parser / CLI (Example docker-compose -> yaml) DONE
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS
-#TODO IP checker in use
+#TODO IP checker in use 
 #TODO make every IPTABLE entry perfect with the interfaces and other things
 #TODO create a directory with honeypots
 #TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT
