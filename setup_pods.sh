@@ -20,20 +20,19 @@ for i in $(seq 0 $((len - 1))); do
     honeypot_service=$(yq ".honeypots[$i].service" "$HONEYPOT_CONF" | tr -d '"')
     honeypot_mac_addr=$(yq ".honeypots[$i].mac" "$HONEYPOT_CONF" | tr -d '"')
     network_range=$(yq ".vlans[] | select(.id == $honeypot_vlan_id) | .range" $NETWORK_CONF | tr -d '"')
-    IFS=. read -r o1 o2 o3 o4 <<< "$current_internal_ip"
     #honeypot_mac_address=$(hexdump -n6 -v -e '/1 "%02X:"' /dev/urandom | sed 's/:$//')
     #sudo ip addr add $honeypot_external_ip/32 dev eth0.$honeypot_vlan_id
     sudo iptables -t nat -A PREROUTING -d $honeypot_external_ip -j DNAT --to-destination $current_internal_ip # here the eth0 will be eth0.20 or other respectfully by its vlan id
     sudo iptables -t nat -A POSTROUTING -s $current_internal_ip -d $network_range -j SNAT --to-source $honeypot_external_ip
-    echo "RUNNING sudo ./run_honeypot.sh $current_internal_ip $honeypot_mac_addr $honeypot_name"
+    
     
     sudo ip link add macvlan$i link eth0.$honeypot_vlan_id type macvlan mode bridge
     sudo ip link set dev macvlan$i address $honeypot_mac_addr
     sudo ip addr add $honeypot_external_ip/32 dev macvlan$i
 
     sudo ip link set macvlan$i up
-    #sudo ip route add $network_range dev macvlan$i
-
+    sudo ip route add $network_range dev macvlan$i src $honeypot_external_ip
+    echo "RUNNING sudo ./run_honeypot.sh $current_internal_ip $honeypot_mac_addr $honeypot_name"
     sudo ./run_honeypot.sh $current_internal_ip $honeypot_mac_addr $honeypot_name
     #MAYBEEE sudo ip link set dev eth0.20 promisc on
     echo "$honeypot_external_ip"
