@@ -27,10 +27,10 @@ sudo sysctl -w net.ipv4.ip_forward=1
 
 #TODO JSON parser / CLI (Example docker-compose -> yaml) DONE
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS
-#TODO IP checker in use 
-#TODO make every IPTABLE entry perfect with the interfaces and other things
-#TODO create a directory with honeypots
-#TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT
+#TODO IP checker in use DONE
+#TODO make every IPTABLE entry perfect with the interfaces and other things DONE
+#TODO create a directory with honeypots 
+#TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT DONE
 
 #TODO LOGS ENTIRELY NETFLOWS
 #TODO NETWORK TELESCOPE
