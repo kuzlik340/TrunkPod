@@ -47,7 +47,7 @@ rollback() {
         sudo podman rm -f $current_container_name || true
     fi
     echo "[*] Rollback finished"
-    save_pods_stage current_pos
+    save_pods_stage $current_pos
     exit 1
 }
 trap rollback ERR
