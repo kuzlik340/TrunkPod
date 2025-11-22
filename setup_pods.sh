@@ -28,10 +28,10 @@ for i in $(seq 0 $((len - 1))); do
     
     sudo ip link add macvlan$i link eth0.$honeypot_vlan_id type macvlan mode bridge
     sudo ip link set dev macvlan$i address $honeypot_mac_addr
-    sudo ip addr add $honeypot_external_ip/32 dev macvlan$i
+    sudo ip addr add $honeypot_external_ip/32 dev macvlan$i #TODO /24
 
     sudo ip link set macvlan$i up
-    sudo ip route add $network_range dev macvlan$i src $honeypot_external_ip
+    sudo ip route add $network_range dev macvlan$i src $honeypot_external_ip metric $((100+i))
     echo "RUNNING sudo ./run_honeypot.sh $current_internal_ip $honeypot_mac_addr $honeypot_name"
     sudo ./run_honeypot.sh $current_internal_ip $honeypot_mac_addr $honeypot_name
     #MAYBEEE sudo ip link set dev eth0.20 promisc on
