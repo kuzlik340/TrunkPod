@@ -70,9 +70,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
 
     sudo ip link add macvlan_temp link eth0."$honeypot_vlan_id" type macvlan mode bridge
     sudo ip link set macvlan_temp address "$honeypot_mac_addr"
-    #sudo ip link set macvlan_temp up
     echo "[+] Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
-    #sudo ip addr add ${honeypot_ip}/${mask} dev macvlan_temp 2>/dev/null || true
 
     echo "[*] Starting honeypot $honeypot_name"
     container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name")

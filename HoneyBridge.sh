@@ -8,9 +8,10 @@ LOGO_DIR="logos"
 finish=0
 
 random_logo=$(find "$LOGO_DIR" -type f | shuf -n 1)
-echo ""
+echo -e "\n"
 cat "$random_logo"
-echo ""
+
+echo -e "\n"
 echo "HoneyBridge — Honeypot Management Toolkit"
 echo ""
 
@@ -33,14 +34,14 @@ if [[ $# -gt 0 ]]; then
         --clean)
             echo "[*] Resetting setup state..."
             sudo rm -rf $STATE_DIR
-            echo -e "[+] Clean complete. ${GREEN}State reset to 0${NC}"
+            echo -e "[-] Clean complete. ${GREEN}State reset to 0${NC}"
             exit 0
             ;;
         --megaclean)
             echo "[*] Resetting setup state..."
             sudo rm -rf $STATE_DIR
-            echo -e "[+] ${GREEN}State reset to 0${NC}"
-            sudo podman rm -f -a
+            echo -e "[-] ${GREEN}State reset to 0${NC}"
+            container_hashes=$(sudo podman rm -f -a)
             echo -e "[+] ${GREEN}All pods are deleted.${NC}"
             exit 0
             ;;
@@ -110,23 +111,33 @@ if [[ $finish -eq 1 ]]; then
     echo "[*] The configuration is done. $random_quote :)"
 fi
 
-
-#TODO: make the --info flag to see the containers that are running and what services are there (real info via exec ip a)
+#================================================ 1 STAGE ===============================================
+#TODO: make the clean flags do what they are supposed to do not megaclean
+#TODO: also do build flag to build the pods
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
-#TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS
 #TODO IP checker in use                                                                                                                 DONE
 #TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE
-#TODO create a directory with honeypots 
+#TODO create a directory with honeypots                                                                                                 DONE
 #TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT                                                                   DONE
+#TODO many services on one virtual device (2 HTTP servers 80 port and 4000 port)
 
+#================================================ 2 STAGE ===============================================
+#TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
+
+#================================================ 3 STAGE ===============================================
 #TODO LOGS ENTIRELY NETFLOWS
-#TODO NETWORK TELESCOPE
-#TODO FIREWALL BETWEEN DEVICES ON PODMAN INTERNAL NETWORK                                                                               DONE
-#TODO CAPABLITIES on the podman
+#TODO: make the --info flag to see the containers that are running and what services are there (real info via exec ip a)
+#TODO NETWORK TELESCOPE (OTHER PACKETS that are not for honeypots we have to log)(SNORT or SURICATA)
 #TODO EVERYTHING THAT GOES NOT TO CONTAINERS IP WE HAVE TO SEE IT AND LOG (stealth scan TCP:SYN) SOMETHING LIKE IDS
 
+#================================================ 4 STAGE ===============================================
+#TODO CAPABLITIES on the podman 
+#TODO: map user and run without sudo
+#TODO some pentests (Metasploit and others), lateral movement check
+#TODO Mitre ATT&CK 
 
-
+#================================================ Features ===============================================
+#TODO MAC generator based on vendor
 
 #TODO FIX
 # =================================== STAGE 3: Pods configuration ======================================
