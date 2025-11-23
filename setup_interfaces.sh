@@ -37,7 +37,12 @@ for i in $(seq 0 $((len - 1))); do
         echo -e "[!] ${YELLOW}WARNING:${NC} $iface already exists"
 
         while true; do
-            read -rp "[?] Do you want to (k)eep or (o)verride this interface? [k/o]: " choice
+            read -rp "[?] Do you want to (k)eep or (o)verride this interface? [K/o]: " choice
+
+            if [[ -z "$choice" ]]; then # ENTER key
+                choice="k"
+            fi
+
             case "$choice" in
                     k|K)
                         echo "[*] Keeping existing $iface"
@@ -69,4 +74,3 @@ for i in $(seq 0 $((len - 1))); do
 done
 
 echo -e "[*] ${GREEN}All VLAN interfaces configured successfully${NC}"
-echo ""

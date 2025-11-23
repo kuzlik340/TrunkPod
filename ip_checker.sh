@@ -25,5 +25,4 @@ done
 if [[ $pr_exit_code -eq 0 ]]; then
     echo -e "[*] ${GREEN}All IP addresses are free ${NC}"
 fi
-echo ""
 exit $pr_exit_code

@@ -4,16 +4,12 @@ RED='\033[0;31m'
 NC='\033[0m'
 STATE_FILE="/run/honeybridge.d/honeybridge_stage"
 STATE_DIR="/run/honeybridge.d"
+LOGO_DIR="logos"
+finish=0
 
+random_logo=$(find "$LOGO_DIR" -type f | shuf -n 1)
 echo ""
-cat <<'EOF'
-    __  __                       ____       _     __          
-   / / / /___  ____  ___  __  __/ __ )_____(_)___/ /___ ____  
-  / /_/ / __ \/ __ \/ _ \/ / / / __  / ___/ / __  / __ `/ _ \ 
- / __  / /_/ / / / /  __/ /_/ / /_/ / /  / / /_/ / /_/ /  __/ 
-/_/ /_/\____/_/ /_/\___/\__, /_____/_/  /_/\__,_/\__, /\___/  
-                       /____/                   /____/        
-EOF
+cat "$random_logo"
 echo ""
 echo "HoneyBridge — Honeypot Management Toolkit"
 echo ""
@@ -82,6 +78,7 @@ if [[ $stage -eq 0 ]]; then
 else
     echo "[*] Interfaces are already set up. Skipping interface configuration..."
 fi
+echo ""
 
 stage=$(load_stage)
 if [[ $stage -eq 1 ]]; then
@@ -91,8 +88,9 @@ if [[ $stage -eq 1 ]]; then
     fi
     save_stage 2
 else
-    echo "[*] IP check already done. Skipping IP checking"
+    echo "[*] IP check already done. Skipping IP checking..."
 fi
+echo ""
 
 stage=$(load_stage)
 if [[ $stage -eq 2 ]]; then
@@ -101,10 +99,42 @@ if [[ $stage -eq 2 ]]; then
         exit 1
     fi
     save_stage 3
+    finish=1
 else
-    echo "[*] The pods configuration is already done"
+    echo "[*] The pods configuration is already done. Skipping pods checking..."
 fi
 
+if [[ $finish -eq 1 ]]; then
+    echo ""
+    random_quote=$(shuf -n 1 quotes.txt)
+    echo "[*] The configuration is done. $random_quote :)"
+fi
+
+
 #TODO: make the --info flag to see the containers that are running and what services are there (real info via exec ip a)
+#TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
+#TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS
+#TODO IP checker in use                                                                                                                 DONE
+#TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE
+#TODO create a directory with honeypots 
+#TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT                                                                   DONE
+
+#TODO LOGS ENTIRELY NETFLOWS
+#TODO NETWORK TELESCOPE
+#TODO FIREWALL BETWEEN DEVICES ON PODMAN INTERNAL NETWORK                                                                               DONE
+#TODO CAPABLITIES on the podman
+#TODO EVERYTHING THAT GOES NOT TO CONTAINERS IP WE HAVE TO SEE IT AND LOG (stealth scan TCP:SYN) SOMETHING LIKE IDS
 
 
+
+
+#TODO FIX
+# =================================== STAGE 3: Pods configuration ======================================
+# [*] Creating macvlan interface: macvlan_temp for honeypot1
+# [+] Created macvlan_temp with honeypot MAC DA:FD:BE:EF:00:01
+# [*] Starting honeypot honeypot1
+# [+] Container honeypot1 started: b921ef65fd2cc62201846def1b146a296f0c359e495d49f01e1a8da6950f5aaf
+# [*] Moving macvlan_temp into honeypot1 namespace
+# [*] Configuring pod networking
+# ./setup_pods.sh: line 96: service_script: unbound variable
+# [!] Error while configuring pods. Aborting configuration
