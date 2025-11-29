@@ -25,17 +25,6 @@ buildah_run() {
 # Get mount point for file operations
 mnt=$(buildah_run mount "$ctr")
 
-echo "[*] Installing base dependencies, this will take some time..."
-buildah_run run "$ctr" -- bash -c "
-    apt-get update && apt-get install -y --no-install-recommends \
-        bash sudo ca-certificates supervisor openssh-server \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*
-"
-
-echo "[*] Creating SSH user"
-buildah_run run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
-buildah_run run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
-
 echo "[*] Generating SSH host keys"
 buildah_run run "$ctr" mkdir -p /var/run/sshd
 buildah_run run "$ctr" ssh-keygen -A

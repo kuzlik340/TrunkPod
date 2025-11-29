@@ -23,13 +23,6 @@ fi
 # Mount rootfs
 mnt=$(run_buildah mount "$ctr")
 
-echo "[*] Installing base dependencies + Python"
-run_buildah run "$ctr" -- bash -c "
-    apt-get update && apt-get install -y --no-install-recommends \
-        bash sudo ca-certificates supervisor python3 python3-pip \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*
-"
-
 echo "[*] Creating /app directory for login service"
 run_buildah run "$ctr" mkdir -p /app
 

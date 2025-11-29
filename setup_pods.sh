@@ -54,7 +54,7 @@ trap rollback ERR
 
 start_pos=$(load_pods_stage)
 
-
+sudo ./build_services/build_base.sh
 for i in $(seq "${start_pos}" $((len - 1))); do
     # Reading configuration
     rm -rf build_services/configs/supervisor
