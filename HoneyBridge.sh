@@ -37,6 +37,12 @@ if [[ $# -gt 0 ]]; then
             echo -e "[-] Clean complete. ${GREEN}State reset to 0${NC}"
             exit 0
             ;;
+        --build)
+            echo "[*] Resetting setup state..."
+            sudo rm -rf $STATE_DIR
+            echo -e "[-] Clean complete. ${GREEN}State reset to 0${NC}"
+            exit 0
+            ;;
         --megaclean)
             echo "[*] Resetting setup state..."
             sudo rm -rf $STATE_DIR
@@ -120,6 +126,10 @@ fi
 #TODO create a directory with honeypots                                                                                                 DONE
 #TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT                                                                   DONE
 #TODO many services on one virtual device (2 HTTP servers 80 port and 4000 port)
+#TODO change IP while running
+#TODO add dockerfile_builder and entrypoint_builder
+#TODO check PID 1 in all containers
+#TODO add build stage before running every container and parser for list of services
 
 #================================================ 2 STAGE ===============================================
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 

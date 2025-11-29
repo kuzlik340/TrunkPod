@@ -73,7 +73,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     echo "[+] Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 
     echo "[*] Starting honeypot $honeypot_name"
-    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name")
+    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name $image")
     echo -e  "[+] ${GREEN}Container $honeypot_name started:${NC} $container_hash"
     current_container_name="$honeypot_name"
     container_running=1

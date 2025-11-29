@@ -34,5 +34,5 @@ class PrintServer(object):
 
 if __name__ == "__main__":
     ps = PrintServer()
-    print_server = ps.get_server("0.0.0.0", 9100)  # <-- IMPORTANT
+    print_server = ps.get_server("0.0.0.0", 9100)  
     print_server.serve_forever()

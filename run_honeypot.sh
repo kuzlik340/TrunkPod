@@ -5,4 +5,4 @@ sudo podman run -d --name "$1" \
   --network none \
   --tmpfs /tmp:rw,size=64m \
   --read-only=false \
-  os-emulator:latest
+  honeypot:latest
