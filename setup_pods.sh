@@ -12,7 +12,7 @@ NC='\033[0m'
 
 len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
 
-
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 echo "=================================== STAGE 3: Pods configuration ======================================"
 
 set -euo pipefail
@@ -57,8 +57,8 @@ start_pos=$(load_pods_stage)
 
 for i in $(seq "${start_pos}" $((len - 1))); do
     # Reading configuration
-    rm -rf defaults/supervisor
-    cp -r defaults/supervisor_templates defaults/supervisor
+    rm -rf build_services/configs/supervisor
+    cp -r build_services/configs/supervisor_templates build_services/configs/supervisor
     macvlan_moved=0
     container_running=0
     honeypot_name=$(yq ".honeypots[$i].name" "$HONEYPOT_CONF" | tr -d '"')
@@ -66,18 +66,15 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     honeypot_vlan_id=$(yq ".honeypots[$i].vlan" "$HONEYPOT_CONF" | tr -d '"')
     honeypot_mac_addr=$(yq ".honeypots[$i].mac" "$HONEYPOT_CONF" | tr -d '"')
     network_range=$(yq ".vlans[] | select(.id == $honeypot_vlan_id) | .range" $NETWORK_CONF | tr -d '"')
-    mapfile -t service_names < <(yq ".honeypots[$i].services[].name" "$HONEYPOT_CONF")
-    mapfile -t service_ports < <(yq ".honeypots[$i].services[].port" "$HONEYPOT_CONF")
-    echo "[*] Creating Dockerfile"
-    ./docker_preprocessor.sh defaults/default_dockerfile "${service_names[@]}" > defaults/Dockerfile
-    echo "[+] Dockerfile created"
+    mapfile -t service_names < <(yq -r ".honeypots[$i].services[].name" "$HONEYPOT_CONF")
+    mapfile -t service_ports < <(yq -r ".honeypots[$i].services[].port" "$HONEYPOT_CONF")
     echo "[*] Updating supervisor service ports"
 
     for idx in "${!service_names[@]}"; do
         name="${service_names[$idx]}"
         port="${service_ports[$idx]}"
         clean_name="${name//\"/}"
-        conf_path="defaults/supervisor/${clean_name}.conf"
+        conf_path="build_services/configs/supervisor/${clean_name}.conf"
 
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
@@ -89,8 +86,8 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     done
 
     echo "[+] Building image"
-    podman build -t $honeypot_name defaults/
-
+    ./build_services/start.sh $honeypot_name ${service_names[@]}
+    cd "$SCRIPT_DIR"
     current_pos=${i}
     echo "[*] Creating macvlan interface: macvlan_temp for $honeypot_name"
 

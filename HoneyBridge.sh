@@ -120,6 +120,8 @@ fi
 #================================================ 1 STAGE ===============================================
 #TODO: make the clean flags do what they are supposed to do not megaclean
 #TODO change IP while running
+#TODO include creating base
+#TODO add errors handler in the build_services
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
 #TODO IP checker in use                                                                                                                 DONE
 #TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE
