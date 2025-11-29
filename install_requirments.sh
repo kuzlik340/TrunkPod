@@ -20,5 +20,6 @@ if ! dpkg -s yq &>/dev/null; then
     echo ""
     sudo apt install -y yq
 fi
+
 echo -e "[*] ${GREEN}Tools are installed${NC}"
 echo ""

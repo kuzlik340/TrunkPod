@@ -57,14 +57,40 @@ start_pos=$(load_pods_stage)
 
 for i in $(seq "${start_pos}" $((len - 1))); do
     # Reading configuration
+    rm -rf defaults/supervisor
+    cp -r defaults/supervisor_templates defaults/supervisor
     macvlan_moved=0
     container_running=0
     honeypot_name=$(yq ".honeypots[$i].name" "$HONEYPOT_CONF" | tr -d '"')
     honeypot_ip=$(yq ".honeypots[$i].ip" "$HONEYPOT_CONF" | tr -d '"')
     honeypot_vlan_id=$(yq ".honeypots[$i].vlan" "$HONEYPOT_CONF" | tr -d '"')
-    honeypot_service=$(yq ".honeypots[$i].service" "$HONEYPOT_CONF" | tr -d '"')
     honeypot_mac_addr=$(yq ".honeypots[$i].mac" "$HONEYPOT_CONF" | tr -d '"')
     network_range=$(yq ".vlans[] | select(.id == $honeypot_vlan_id) | .range" $NETWORK_CONF | tr -d '"')
+    mapfile -t service_names < <(yq ".honeypots[$i].services[].name" "$HONEYPOT_CONF")
+    mapfile -t service_ports < <(yq ".honeypots[$i].services[].port" "$HONEYPOT_CONF")
+    echo "[*] Creating Dockerfile"
+    ./docker_preprocessor.sh defaults/default_dockerfile "${service_names[@]}" > defaults/Dockerfile
+    echo "[+] Dockerfile created"
+    echo "[*] Updating supervisor service ports"
+
+    for idx in "${!service_names[@]}"; do
+        name="${service_names[$idx]}"
+        port="${service_ports[$idx]}"
+        clean_name="${name//\"/}"
+        conf_path="defaults/supervisor/${clean_name}.conf"
+
+        if [[ -f "$conf_path" ]]; then
+            # Replace "insert_port" with the actual port
+            sed -i "s/insert_port/${port}/g" "$conf_path"
+            echo "    - Set port ${port} in ${conf_path}"
+        else
+            echo "    - WARNING: No supervisor config for service '$clean_name' (${conf_path})"
+        fi
+    done
+
+    echo "[+] Building image"
+    podman build -t $honeypot_name defaults/
+
     current_pos=${i}
     echo "[*] Creating macvlan interface: macvlan_temp for $honeypot_name"
 
@@ -73,7 +99,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     echo "[+] Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 
     echo "[*] Starting honeypot $honeypot_name"
-    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name $image")
+    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name")
     echo -e  "[+] ${GREEN}Container $honeypot_name started:${NC} $container_hash"
     current_container_name="$honeypot_name"
     container_running=1
@@ -91,20 +117,12 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     sudo nsenter -t "$pid" -n ip addr add "${honeypot_ip}"/"${mask}" dev eth0
     sudo nsenter -t "$pid" -n ip link set eth0 up
 
-    if [[ -x "$SERVICES_DIR" ]]; then
-        echo "[*] Starting honeypot service: $honeypot_service"
-        sudo podman cp honeypots/"$honeypot_service".sh "$honeypot_name":/opt/$honeypot_service.sh
-        sudo podman exec -d "$honeypot_name" bash -c "chmod +x /opt/${honeypot_service}.sh" > /dev/null
-        sudo podman exec -d "$honeypot_name" bash -c /opt/"$honeypot_service".sh > /dev/null
-        echo "[+] Service '$honeypot_service' started inside $honeypot_name"
-    else
-        echo -e "[!] ${RED}Service script not found:${NC} $service_script"
-    fi
-
-
     echo -e "[+] ${GREEN}Honeypot $honeypot_name ready ${NC}"
     echo -e "    MAC: ${YELLOW}$honeypot_mac_addr${NC}"
     echo -e "    IP: ${YELLOW}$honeypot_ip${NC}"
-    echo -e "    SERVICE: ${YELLOW}$honeypot_service${NC}"
+    echo -ne "    SERVICES: ${YELLOW}"
+    printf "%s " "${service_names[@]}"
+    echo -e "${NC}"
+
     echo ""
 done

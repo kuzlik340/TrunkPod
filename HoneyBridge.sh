@@ -119,17 +119,16 @@ fi
 
 #================================================ 1 STAGE ===============================================
 #TODO: make the clean flags do what they are supposed to do not megaclean
-#TODO: also do build flag to build the pods
+#TODO change IP while running
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
 #TODO IP checker in use                                                                                                                 DONE
 #TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE
 #TODO create a directory with honeypots                                                                                                 DONE
 #TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT                                                                   DONE
-#TODO many services on one virtual device (2 HTTP servers 80 port and 4000 port)
-#TODO change IP while running
-#TODO add dockerfile_builder and entrypoint_builder
-#TODO check PID 1 in all containers
-#TODO add build stage before running every container and parser for list of services
+#TODO many services on one virtual device (2 HTTP servers 80 port and 4000 port)                                                        DONE
+#TODO add dockerfile_builder and entrypoint_builder                                                                                     DONE
+#TODO check PID 1 in all containers                                                                                                     DONE
+#TODO add build stage before running every container and parser for list of services                                                    DONE
 
 #================================================ 2 STAGE ===============================================
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
