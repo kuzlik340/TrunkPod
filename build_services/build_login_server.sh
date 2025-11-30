@@ -35,7 +35,7 @@ run_buildah copy "$ctr" configs/supervisor/login_server.conf /etc/supervisor/con
 # Copy supervisord main config last (same as in SSH)
 run_buildah copy "$ctr" configs/supervisord.conf /etc/supervisor/supervisord.conf
 
-# Finished?
+# Finished
 if [[ $finish -eq 1 ]]; then
     ./finish.sh "$IMAGE_NAME" "$ctr"
 else

@@ -1,36 +1,62 @@
 #!/bin/bash
+# ------------------------------------------------
+# HoneyBridge: Honeypot Deployment Orchestrator
+# Controls staged setup, pod creation, interface
+# management, service configuration, and recovery.
+# ------------------------------------------------
 
+# Colors
 RED='\033[0;31m'
 NC='\033[0m'
-STATE_FILE="/run/honeybridge.d/honeybridge_stage"
-STATE_DIR="/run/honeybridge.d"
-LOGO_DIR="logos"
-finish=0
 
+STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe restarts
+STATE_FILE="/run/honeybridge.d/honeybridge_stage"
+LOGO_DIR="logos"    # Directory with the logos of the HoneyBridge project
+finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
+
+# Output project logo with some info
 random_logo=$(find "$LOGO_DIR" -type f | shuf -n 1)
 echo -e "\n"
 cat "$random_logo"
-
 echo -e "\n"
 echo "HoneyBridge — Honeypot Management Toolkit"
 echo ""
 
-sudo mkdir -p /run/honeybridge.d
+# Create dir for saving stage
+sudo mkdir -p $STATE_DIR
+
+# =================================== FUNCTIONS =========================================
 
 show_help() {
     echo "HoneyBridge Options:"
     echo "  --help       Show this help message"
     echo "  --clean      Remove previous configuration state and start fresh"
-    echo "  --megaclean  Remove previous configuration state and running pods"
+    echo "  --megaclean  Remove previous configuration state and running pods" #TODO legacy
+    echo "  honeypots show" #TODO make this
+    echo "  honeypots ps" #TODO make this
 }
 
+save_stage() {
+    echo "$1" | sudo tee "$STATE_FILE" > /dev/null
+}
+
+load_stage() {
+    if [[ -f "$STATE_FILE" ]]; then
+        cat "$STATE_FILE"
+    else
+        echo 0
+    fi
+}
+
+# =======================================================================================
+
+# Check args
 if [[ $# -gt 0 ]]; then
     case "$1" in
         --help)
             show_help
             exit 0
             ;;
-
         --clean)
             echo "[*] Resetting setup state..."
             sudo rm -rf $STATE_DIR
@@ -51,7 +77,6 @@ if [[ $# -gt 0 ]]; then
             echo -e "[+] ${GREEN}All pods are deleted.${NC}"
             exit 0
             ;;
-
         *)
             echo -e "[!] ${RED}ERROR:${NC} Unknown option: $1"
             echo "Use --help for usage info."
@@ -60,22 +85,13 @@ if [[ $# -gt 0 ]]; then
     esac
 fi
 
+# Install all tools
 sudo ./install_requirments.sh
 
-save_stage() {
-    echo "$1" | sudo tee "$STATE_FILE" >/dev/null
-}
-
-load_stage() {
-    if [[ -f "$STATE_FILE" ]]; then
-        cat "$STATE_FILE"
-    else
-        echo 0
-    fi
-}
 
 stage=$(load_stage)
 
+# Create the interfaces for VLANs
 if [[ $stage -eq 0 ]]; then
     if ! sudo bash -c ./setup_interfaces.sh; then
         echo -e "${RED}[!] interface setup exited with error. ${NC}Aborting configuration"
@@ -87,6 +103,7 @@ else
 fi
 echo ""
 
+# Check if desired honeypots IPs are free to use
 stage=$(load_stage)
 if [[ $stage -eq 1 ]]; then
     if ! sudo bash -c ./ip_checker.sh; then
@@ -99,6 +116,7 @@ else
 fi
 echo ""
 
+# Setup pods that will be running on each VLAN
 stage=$(load_stage)
 if [[ $stage -eq 2 ]]; then
     if ! sudo bash -c ./setup_pods.sh; then
@@ -120,7 +138,9 @@ fi
 #================================================ 1 STAGE ===============================================
 #TODO: make the clean flags do what they are supposed to do not megaclean
 #TODO change IP while running
+#TODO: make IP checker check for same IPs in the yaml and same ports
 #TODO add errors handler in the build_services
+#TODO check changes in yamls and base_image via hashes
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
 #TODO IP checker in use                                                                                                                 DONE
 #TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE

@@ -17,6 +17,6 @@ buildah run "$ctr" -- bash -c "
         openssh-server \
         && apt-get clean && rm -rf /var/lib/apt/lists/*
 "
-buildah_run run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
-buildah_run run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
+buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
+buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
 buildah commit "$ctr" honeypot-base
