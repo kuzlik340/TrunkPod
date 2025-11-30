@@ -48,6 +48,15 @@ load_stage() {
     fi
 }
 
+clean() {
+    echo "[*] Resetting setup state..."
+    sudo rm -rf $STATE_FILE
+    sudo rm -rf $STATE_DIR/honeybridge_pods_stage
+    echo -e "[-] ${GREEN}State reset to 0${NC}"
+    container_hashes=$(sudo podman rm -f -a)
+    echo -e "[+] ${GREEN}All pods are deleted.${NC}"
+}
+
 # =======================================================================================
 
 # Check args
@@ -70,11 +79,7 @@ if [[ $# -gt 0 ]]; then
             exit 0
             ;;
         --megaclean)
-            echo "[*] Resetting setup state..."
-            sudo rm -rf $STATE_DIR
-            echo -e "[-] ${GREEN}State reset to 0${NC}"
-            container_hashes=$(sudo podman rm -f -a)
-            echo -e "[+] ${GREEN}All pods are deleted.${NC}"
+            clean
             exit 0
             ;;
         *)
@@ -83,6 +88,12 @@ if [[ $# -gt 0 ]]; then
             exit 1
             ;;
     esac
+fi
+
+
+if ! sudo bash -c ./check_changes.sh; then
+    echo -e "[*] ${GREEN}The configs have been changed${NC}. Running configuration from scratch..."
+    clean
 fi
 
 # Install all tools
@@ -94,7 +105,7 @@ stage=$(load_stage)
 # Create the interfaces for VLANs
 if [[ $stage -eq 0 ]]; then
     if ! sudo bash -c ./setup_interfaces.sh; then
-        echo -e "${RED}[!] interface setup exited with error. ${NC}Aborting configuration"
+        echo -e "[!] ${RED}interface setup exited with error. ${NC}Aborting configuration"
         exit 1
     fi
     save_stage 1
@@ -136,9 +147,8 @@ if [[ $finish -eq 1 ]]; then
 fi
 
 #================================================ 1 STAGE ===============================================
-#TODO: make the clean flags do what they are supposed to do not megaclean
-#TODO change IP while running
-#TODO: make IP checker check for same IPs in the yaml and same ports
+#TODO make the clean flags do what they are supposed to do not megaclean
+#TODO make IP checker check for same IPs in the yaml and same ports
 #TODO add errors handler in the build_services
 #TODO check changes in yamls and base_image via hashes
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
@@ -152,7 +162,7 @@ fi
 #TODO add build stage before running every container and parser for list of services                                                    DONE
 
 #================================================ 2 STAGE ===============================================
-#TODO 2-3 services (Simple HTTP server, LDAP, SSH). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
+#TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
 
 #================================================ 3 STAGE ===============================================
 #TODO LOGS ENTIRELY NETFLOWS
@@ -168,6 +178,8 @@ fi
 
 #================================================ Features ===============================================
 #TODO MAC generator based on vendor
+#TODO change IP while running
+
 
 #TODO FIX
 # =================================== STAGE 3: Pods configuration ======================================

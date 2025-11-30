@@ -21,5 +21,11 @@ if ! dpkg -s yq &>/dev/null; then
     sudo apt install -y yq
 fi
 
+if ! dpkg -s python3 &>/dev/null; then
+    echo "[*] Installing python3"
+    echo ""
+    sudo apt install -y python3
+fi
+
 echo -e "[*] ${GREEN}Tools are installed${NC}"
 echo ""

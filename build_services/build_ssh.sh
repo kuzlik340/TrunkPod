@@ -15,8 +15,6 @@ else
     rest_services=("${@:3}")
 fi
 
-echo "$@"
-
 buildah_run() {
     echo "[buildah] $*" >> "$logfile"
     buildah "$@" >> "$logfile" 2>&1

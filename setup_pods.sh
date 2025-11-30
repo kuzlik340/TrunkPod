@@ -64,7 +64,7 @@ trap rollback ERR # Will be called if error occurs
 # Load last stage
 start_pos=$(load_pods_stage) 
 
-# Build base image from what other honeypots will be built
+# Build base image
 sudo ./build_services/build_base.sh 
 
 for i in $(seq "${start_pos}" $((len - 1))); do
@@ -85,13 +85,10 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     cp -r build_services/configs/supervisor_templates build_services/configs/supervisor
 
     echo "[*] Updating supervisor service ports"
-
     for idx in "${!service_names[@]}"; do
         name="${service_names[$idx]}"
         port="${service_ports[$idx]}"
-        #clean_name=$(echo "$name" | tr -d '"')
         conf_path="build_services/configs/supervisor/${name}.conf"
-        echo $name
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
             sed -i "s/insert_port/${port}/g" "$conf_path"
@@ -102,6 +99,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
 
     # This will create an image with all neccessary tools to run services
     echo "[+] Building image"
+    # Passing all services so the chain of build_"services".sh scripts will build the desired image
     ./build_services/start.sh $honeypot_name ${service_names[@]}
     cd "$SCRIPT_DIR"
     # Update already deployed honeypot counter
