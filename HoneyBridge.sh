@@ -148,9 +148,9 @@ fi
 
 #================================================ 1 STAGE ===============================================
 #TODO make the clean flags do what they are supposed to do not megaclean
-#TODO make IP checker check for same IPs in the yaml and same ports
-#TODO add errors handler in the build_services
-#TODO check changes in yamls and base_image via hashes
+#TODO add errors handler in the build_services                                                                                          
+#TODO what if exit 1 in builder chain
+#TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
 #TODO IP checker in use                                                                                                                 DONE
 #TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE
@@ -179,6 +179,8 @@ fi
 #================================================ Features ===============================================
 #TODO MAC generator based on vendor
 #TODO change IP while running
+#TODO make IP checker check for same IPs in the yaml and same ports
+#TODO do not rebuild base image if hash is still same
 
 
 #TODO FIX

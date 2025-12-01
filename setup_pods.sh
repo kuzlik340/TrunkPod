@@ -66,6 +66,7 @@ start_pos=$(load_pods_stage)
 
 # Build base image
 sudo ./build_services/build_base.sh 
+cd "$SCRIPT_DIR"
 
 for i in $(seq "${start_pos}" $((len - 1))); do
     # Updating variables for safe rollback

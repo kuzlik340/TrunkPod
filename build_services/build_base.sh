@@ -1,22 +1,28 @@
-# build_base.sh
+#!/bin/bash
 
+set -euo pipefail
 
-if sudo podman image exists honeypot-base; then
-    echo "[+] Base image already exists, skipping build."
-    exit 0
-fi
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+cd "$SCRIPT_DIR"
+
+source base_functions.sh
+
+trap rollback ERR 
 
 ctr=$(buildah from debian:stable-slim)
 
-buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
-buildah run "$ctr" -- bash -c "
+#TODO fix command
+run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
+#TODO  WHY works only with rc=
+rc=$(run_buildah run "$ctr" -- bash -c "
     apt-get update &&
-    apt-get install -y --no-install-recommends \
+    apt-get instl -y --no-install-recommends \
         bash sudo ca-certificates supervisor \
         python3 python3-pip \
         openssh-server \
         && apt-get clean && rm -rf /var/lib/apt/lists/*
-"
-buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
-buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
-buildah commit "$ctr" honeypot-base
+")
+echo $rc
+run_buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
+run_buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
+run_buildah commit "$ctr" honeypot-base
