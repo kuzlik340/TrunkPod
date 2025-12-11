@@ -4,11 +4,14 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' 
 
-timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-logfile="/var/log/honeybridge_build.log"
+logfile="$(cat log_file_path)"
 
-# Buildah logger: logs only buildah output, prints your echo normally
 
+print_logfile_message() {
+    echo -e "[*] Logfile for all 3 stage: $logfile"
+}
+
+# Buildah logger: logs only buildah output, errors will be seen in stdout
 run_buildah() {
     buildah "$@" >> "$logfile" 2>>"$logfile"
     rc=${PIPESTATUS[0]} 

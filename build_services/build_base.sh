@@ -11,13 +11,13 @@ trap rollback ERR
 
 echo "[*] Creating base image"
 
-
+print_logfile_message
 ctr=$(buildah from debian:stable-slim)
 
 #TODO fix command
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
 #TODO  WHY works only with rc=
-echo "[*] Running update of base image"
+echo "[*] Running update of base image" 
 run_buildah run "$ctr" -- bash -c "
     apt-get update &&
     apt-get install -y --no-install-recommends \

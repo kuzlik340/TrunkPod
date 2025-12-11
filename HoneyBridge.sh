@@ -29,6 +29,7 @@ echo ""
 
 # Create dir for saving stage
 sudo mkdir -p $STATE_DIR
+sudo ./build_services/log_file_create.sh
 
 # =================================== FUNCTIONS =========================================
 
@@ -73,6 +74,12 @@ if [[ $# -gt 0 ]]; then
             ;;
         --clean)
             clean
+            exit 0
+            ;;
+        --clean-logs)
+            echo -e "[*] Cleaning logs..."
+            rm -f /var/log/honeybridge*
+            echo -e "${GREEN}[*]${NC} Logs are ${GREEN}succesfully${NC} cleaned"
             exit 0
             ;;
         *)
@@ -145,8 +152,9 @@ fi
 #TODO add errors handler in the build_services                                                                                          DONE                                                                            
 #TODO what if exit 1 in builder chain                                                                                                   DONE
 #TODO fix logs (Only errors to shell, other things to log file)                                                                         DONE
-#TODO every start new log file
-#TODO --clean-logs to clean all logs
+#TODO every start new log file                                                                                                          DONE
+#TODO --clean-logs to clean all logs                                                                                                    
+#TODO do not rebuild base image if hash is still same
 
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
@@ -179,7 +187,6 @@ fi
 #TODO MAC generator based on vendor
 #TODO change IP while running
 #TODO make IP checker check for same IPs in the yaml and same ports
-#TODO do not rebuild base image if hash is still same
 #TODO multi-core to optimize time
 #TODO sudo only where it is has to be
 #TODO services:

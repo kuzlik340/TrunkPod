@@ -9,7 +9,7 @@ trap rollback ERR
 IMAGE_NAME=$1
 
 services=("${@:2}")
-
+print_logfile_message
 echo "[*] Starting Buildah build: $IMAGE_NAME"
 ctr=$(buildah from localhost/honeypot-base 2>/dev/null)
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
