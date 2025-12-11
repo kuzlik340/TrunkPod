@@ -8,17 +8,13 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' 
+source global_functions.sh
 
 STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe restarts
 STATE_FILE="/run/honeybridge.d/honeybridge_stage"
 LOGO_DIR="logos"    # Directory with the logos of the HoneyBridge project
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
-rebuild_base=0
+rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
 
 # Output project logo with some info
 random_logo=$(find "$LOGO_DIR" -type f | shuf -n 1)
@@ -41,6 +37,7 @@ show_help() {
     echo "  honeypots ps" #TODO make this
 }
 
+# Helper functions to find where the program was stopped
 save_stage() {
     echo "$1" | sudo tee "$STATE_FILE" > /dev/null
 }
@@ -53,18 +50,20 @@ load_stage() {
     fi
 }
 
+# Clean up everything except logs and file hashes
 clean() {
-    echo "[*] Resetting setup state..."
+    print_info "Resetting setup state..."
     sudo rm -rf $STATE_FILE
     sudo rm -rf $STATE_DIR/honeybridge_pods_stage
-    echo -e "[-] ${GREEN}State reset to 0${NC}"
+    print_success "State reset to 0"
     container_hashes=$(sudo podman rm -f -a)
-    echo -e "[+] ${GREEN}All pods are deleted.${NC}"
+    print_success "All pods are deleted"
+    container_hashes=$(sudo podman rm -f -a)
 }
 
 # =======================================================================================
 
-# Check args
+# Checker for args
 if [[ $# -gt 0 ]]; then
     case "$1" in
         --help)
@@ -76,84 +75,93 @@ if [[ $# -gt 0 ]]; then
             exit 0
             ;;
         --clean-logs)
-            echo -e "[*] Cleaning logs..."
+            
+            print_info "Cleaning logs..."
             rm -f /var/log/honeybridge_build*
             rm -rf /var/log/honeybridge
-            echo -e "${GREEN}[*]${NC} Logs are ${GREEN}succesfully${NC} cleaned"
+            print_success "Logs are ${GREEN}succesfully${NC} cleaned"
             exit 0
             ;;
         *)
-            echo -e "[!] ${RED}ERROR:${NC} Unknown option: $1"
+            print_error "Unknown option: $1"
             echo "Use --help for usage info."
             exit 1
             ;;
     esac
 fi
 
-set +e
+# Check changes returns 1 if some config was changed and 2 if base_image was changed, 50 when error
+set +e 
 sudo bash -c ./check_changes.sh
 rc=$?
 set -e
 
+# Check return code of check_changes
 if [[ $rc -ne 0 ]]; then
-    if [[ $rc -eq 100 ]]; then
-        echo -e "[*] ${GREEN}Base image changed${NC}. Base image will be rebuilt"
+    if [[ $rc -eq 2 ]]; then
+        print_info "Base image changed. Base image will be rebuilt"
         rebuild_base=1
+    elif [[ $rc -eq 50 ]]; then
+        print_error "Probably your installation is corrupted. Please reinstall HoneyBridge"
     else
-        echo -e "[*] ${GREEN}The configs have been changed${NC}. Running configuration from scratch..."
+        print_info "The configs have been changed. Running configuration from scratch..."
     fi
     clean
 fi
 
-# Install all tools
-sudo ./install_requirments.sh
+# Check installed tools
+sudo ./install_requirements.sh
 
 
 stage=$(load_stage)
 
-# Create the interfaces for VLANs
+#======== 1 stage =========
+# Create the interfaces for VLANs 
 if [[ $stage -eq 0 ]]; then
     if ! sudo bash -c ./setup_interfaces.sh; then
-        echo -e "[!] ${RED}interface setup exited with error. ${NC}Aborting configuration"
+        print_error "Interface setup exited with error. Aborting configuration"
         exit 1
     fi
     save_stage 1
+    echo ""
 else
-    echo "[*] Interfaces are already set up. Skipping interface configuration..."
+    print_info "Interfaces are already set up. Skipping interface configuration..."
 fi
-echo ""
 
+#======== 2 stage =========
 # Check if desired honeypots IPs are free to use
 stage=$(load_stage)
 if [[ $stage -eq 1 ]]; then
     if ! sudo bash -c ./ip_checker.sh; then
-        echo -e "[!] ${RED}IP conflict detected. ${NC}Please change the honeypot IP. Aborting configuration"
+        print_error "IP conflict detected. Please change the honeypot IP. Aborting configuration"
         exit 1
     fi
     save_stage 2
+    echo ""
 else
-    echo "[*] IP check already done. Skipping IP checking..."
+    print_info "IP check already done. Skipping IP checking..."
 fi
-echo ""
 
+#======== 3 stage =========
 # Setup pods that will be running on each VLAN
 stage=$(load_stage)
 if [[ $stage -eq 2 ]]; then
     sudo ./build_services/log_file_create.sh
     if ! sudo bash -c "./setup_pods.sh $rebuild_base"; then
-        echo -e "[!] ${RED}Error while configuring pods. ${NC}Aborting configuration"
+        print_error "Error while configuring pods. Aborting configuration"
         exit 1
     fi
     save_stage 3
     finish=1
 else
-    echo "[*] The pods configuration is already done. Skipping pods checking..."
+    print_info "The pods configuration is already done. Skipping pods checking..."
 fi
 
+# Show some random quote at the end
 if [[ $finish -eq 1 ]]; then
     echo ""
     random_quote=$(shuf -n 1 quotes.txt)
-    echo "[*] The configuration is done. $random_quote :)"
+    print_info "The configuration is done. $random_quote :)"
 fi
 
 #================================================ 1 STAGE ===============================================
@@ -166,6 +174,7 @@ fi
 #TODO do not rebuild base image if hash is still same                                                                                   DONE
 #TODO strong passwd for ssh
 #TODO refactor
+#TODO add 3 stage building
 
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
