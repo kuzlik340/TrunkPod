@@ -1,7 +1,7 @@
 #!/bin/bash
 # Colors
 
-set -euo pipefail
+set -uo pipefail
 
 ctr=$2
 IMAGE_NAME=$1

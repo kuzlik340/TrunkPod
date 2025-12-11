@@ -42,7 +42,7 @@ load_pods_stage() {
 }
 
 rollback() {
-    echo -e "${RED}[!] ERROR occurred${NC}"
+    echo -e "${RED}[!] ERROR occurred while setting up pods${NC}"
     if [[ $macvlan_moved -eq 0 ]]; then
         echo -e "[!] Rolling back..."
         echo "[*] Deleting macvlan_temp"
@@ -53,7 +53,7 @@ rollback() {
         echo "[*] Deleting pod"
         sudo podman rm -f "$current_container_name" || true
     fi
-    echo "[*] Rollback finished"
+    echo "[*] Setup pods rollback completed"
     save_pods_stage "$current_pos"
     exit 1
 }
@@ -63,9 +63,9 @@ trap rollback ERR # Will be called if error occurs
 
 # Load last stage
 start_pos=$(load_pods_stage) 
-
+export XDG_RUNTIME_DIR="/run/user/$(id -u "$SUDO_USER")"
 # Build base image
-sudo ./build_services/build_base.sh 
+sudo -u "$SUDO_USER" bash -c ./build_services/build_base.sh 
 cd "$SCRIPT_DIR"
 
 for i in $(seq "${start_pos}" $((len - 1))); do
@@ -92,7 +92,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
         conf_path="build_services/configs/supervisor/${name}.conf"
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
-            sed -i "s/insert_port/${port}/g" "$conf_path"
+            sudo -u "$SUDO_USER" bash -c "sed -i "s/insert_port/${port}/g" "$conf_path""
         else
             echo -e "[!] ${YELLOW}WARNING:${NC} No supervisor config for service '$name' (${conf_path})"
         fi
@@ -101,7 +101,8 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     # This will create an image with all neccessary tools to run services
     echo "[+] Building image"
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
-    ./build_services/start.sh $honeypot_name ${service_names[@]}
+    echo "sudo ./build_services/start.sh $honeypot_name ${service_names[@]}"
+    sudo ./build_services/start.sh $honeypot_name ${service_names[@]}
     cd "$SCRIPT_DIR"
     # Update already deployed honeypot counter
     current_pos=${i}
@@ -112,7 +113,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     echo "[+] Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 
     echo "[*] Starting honeypot $honeypot_name"
-    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name")
+    container_hash=$(sudo -u "$SUDO_USER" bash -c "./run_honeypot.sh $honeypot_name")
     echo -e  "[+] ${GREEN}Container $honeypot_name started:${NC} $container_hash"
     current_container_name="$honeypot_name"
     container_running=1 # Safe rollback if error occurs

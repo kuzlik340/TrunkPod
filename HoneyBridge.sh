@@ -5,9 +5,14 @@
 # management, service configuration, and recovery.
 # ------------------------------------------------
 
+
+set -euo pipefail
+
 # Colors
 RED='\033[0;31m'
-NC='\033[0m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' 
 
 STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe restarts
 STATE_FILE="/run/honeybridge.d/honeybridge_stage"
@@ -67,18 +72,6 @@ if [[ $# -gt 0 ]]; then
             exit 0
             ;;
         --clean)
-            echo "[*] Resetting setup state..."
-            sudo rm -rf $STATE_DIR
-            echo -e "[-] Clean complete. ${GREEN}State reset to 0${NC}"
-            exit 0
-            ;;
-        --build)
-            echo "[*] Resetting setup state..."
-            sudo rm -rf $STATE_DIR
-            echo -e "[-] Clean complete. ${GREEN}State reset to 0${NC}"
-            exit 0
-            ;;
-        --megaclean)
             clean
             exit 0
             ;;
@@ -147,9 +140,14 @@ if [[ $finish -eq 1 ]]; then
 fi
 
 #================================================ 1 STAGE ===============================================
-#TODO make the clean flags do what they are supposed to do not megaclean
-#TODO add errors handler in the build_services                                                                                          
-#TODO what if exit 1 in builder chain
+#TODO make the clean flags do what they are supposed to do not megaclean                                                                DONE
+#TODO ssh twisted python (or strong passwd)                                                                                             
+#TODO add errors handler in the build_services                                                                                          DONE                                                                            
+#TODO what if exit 1 in builder chain                                                                                                   DONE
+#TODO fix logs (Only errors to shell, other things to log file)                                                                         DONE
+#TODO every start new log file
+#TODO --clean-logs to clean all logs
+
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
 #TODO IP checker in use                                                                                                                 DONE
@@ -162,6 +160,7 @@ fi
 #TODO add build stage before running every container and parser for list of services                                                    DONE
 
 #================================================ 2 STAGE ===============================================
+#TODO shellcheck everywhere
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
 
 #================================================ 3 STAGE ===============================================
@@ -181,6 +180,15 @@ fi
 #TODO change IP while running
 #TODO make IP checker check for same IPs in the yaml and same ports
 #TODO do not rebuild base image if hash is still same
+#TODO multi-core to optimize time
+#TODO sudo only where it is has to be
+#TODO services:
+    #   - name: login_server 
+    #     port: 8000
+    #   - name: login_server 
+    #     port: 8300
+    #   - name: ssh
+    #     port: 22
 
 
 #TODO FIX

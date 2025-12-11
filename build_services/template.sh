@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 IMAGE_NAME="$1"
 ctr="$2"
@@ -24,5 +24,6 @@ echo "[+] Adding SOME_SERVICE service into your $IMAGE_NAME"
 if [[ $finish -eq 1 ]]; then
     ./finish.sh $IMAGE_NAME $ctr
 else
+    trap - ERR
     ./build_"${rest_services[0]}".sh $IMAGE_NAME $ctr ${rest_services[@]:1}
 fi

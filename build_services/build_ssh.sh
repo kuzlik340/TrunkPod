@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 IMAGE_NAME=$1
 ctr=$2
@@ -23,7 +23,7 @@ run_buildah run "$ctr" mkdir -p /var/run/sshd
 run_buildah run "$ctr" ssh-keygen -A
 
 echo "[*] Copying sshd_config"
-run_buildah copy "$ctr" configs/sshd_config /etc/ssh/sshd_config
+run_buildah copy "$ctr" confis/sshd_config /etc/ssh/sshd_config
 
 echo "[*] Copying Supervisor configs"
 run_buildah copy "$ctr" configs/supervisor/ssh.conf /etc/supervisor/conf.d/ssh.conf
@@ -32,6 +32,7 @@ run_buildah copy "$ctr" configs/supervisord.conf /etc/supervisor/supervisord.con
 if [[ $finish -eq 1 ]]; then
     ./finish.sh $IMAGE_NAME $ctr
 else
+    trap - ERR
     ./build_"${rest_services[0]}".sh $IMAGE_NAME $ctr ${rest_services[@]:1}
 fi
 
