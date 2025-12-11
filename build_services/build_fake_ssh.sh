@@ -1,0 +1,35 @@
+#!/bin/bash
+set -uo pipefail
+
+IMAGE_NAME=$1
+ctr=$2
+
+source base_functions.sh
+trap rollback ERR 
+
+print_info "Adding ${YELLOW}FAKE_SSH${NC} service into your $IMAGE_NAME"
+
+finish=0
+rest_services="none"
+
+if [[ $# -eq 2 ]]; then # Check if finish
+    finish=1
+else
+    rest_services=("${@:3}")
+fi
+
+
+run_buildah run "$ctr" virtualenv try-twisted
+run_buildah run "$ctr" . try-twisted/bin/activate
+run_buildah run "$ctr" pip install twisted[tls]
+
+print_success "${YELLOW}FAKE_SSH${NC} service was added to $IMAGE_NAME"
+
+if [[ $finish -eq 1 ]]; then
+    ./finish.sh $IMAGE_NAME $ctr
+else
+    trap - ERR
+    ./build_"${rest_services[0]}".sh $IMAGE_NAME $ctr ${rest_services[@]:1}
+fi
+
+

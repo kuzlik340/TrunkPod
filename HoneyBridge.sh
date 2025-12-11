@@ -12,7 +12,7 @@ source global_functions.sh
 
 STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe restarts
 STATE_FILE="/run/honeybridge.d/honeybridge_stage"
-LOGO_DIR="logos"    # Directory with the logos of the HoneyBridge project
+LOGO_DIR="assets/logos"    # Directory with the logos of the HoneyBridge project
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
 rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
 
@@ -160,7 +160,7 @@ fi
 # Show some random quote at the end
 if [[ $finish -eq 1 ]]; then
     echo ""
-    random_quote=$(shuf -n 1 quotes.txt)
+    random_quote=$(shuf -n 1 assets/quotes.txt)
     echo -e "The configuration is done. $random_quote :)"
 fi
 
@@ -172,10 +172,10 @@ fi
 #TODO every start new log file                                                                                                          DONE
 #TODO --clean-logs to clean all logs                                                                                                    DONE                                                                                          
 #TODO do not rebuild base image if hash is still same                                                                                   DONE
-#TODO strong passwd for ssh
-#TODO refactor
-#TODO add 3 stage building
-#TODO check for || true
+#TODO strong passwd for ssh                                                                                                             
+#TODO refactor                                                                                                                          
+#TODO check for || true                                                                                                                 
+#TODO error handler for yaml                                                                                                            
 
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
@@ -187,7 +187,6 @@ fi
 #TODO add dockerfile_builder and entrypoint_builder                                                                                     DONE
 #TODO check PID 1 in all containers                                                                                                     DONE
 #TODO add build stage before running every container and parser for list of services                                                    DONE
-#TODO error handler for yaml
 
 #================================================ 2 STAGE ===============================================
 #TODO shellcheck everywhere
