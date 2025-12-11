@@ -3,17 +3,19 @@ set -uo pipefail
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 cd "$SCRIPT_DIR"
+
 source base_functions.sh
+
 trap rollback ERR
 
 IMAGE_NAME=$1
 
 services=("${@:2}")
 print_logfile_message
-echo "[*] Starting Buildah build: $IMAGE_NAME"
+print_info "Starting build for $IMAGE_NAME"
 ctr=$(buildah from localhost/honeypot-base 2>/dev/null)
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
-trap - ERR
+trap - ERR  # Delete our rollback implementation, the new build module have its own
 ./build_"${services[0]}".sh $IMAGE_NAME $ctr ${services[@]:1}
 
 

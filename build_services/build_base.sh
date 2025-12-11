@@ -6,10 +6,11 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 cd "$SCRIPT_DIR"
 
 source base_functions.sh
+source ../global_functions.sh
 
 trap rollback ERR 
 
-echo "[*] Creating base image"
+print_info "Creating base image"
 
 print_logfile_message
 ctr=$(buildah from debian:stable-slim)
@@ -17,7 +18,7 @@ ctr=$(buildah from debian:stable-slim)
 #TODO fix command
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr" 
 #TODO  WHY works only with rc=
-echo "[*] Running update of base image" 
+print_info "Running update of base image. This will take some time..." 
 run_buildah run "$ctr" -- bash -c "
     apt-get update &&
     apt-get install -y --no-install-recommends \
@@ -29,4 +30,4 @@ run_buildah run "$ctr" -- bash -c "
 run_buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
 run_buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
 run_buildah commit "$ctr" honeypot-base
-echo "[+] Base image created"
+print_success "Base image created"

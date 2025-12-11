@@ -37,7 +37,7 @@ for i in $(seq 0 $((len - 1))); do
     # Check if interface already exists
     if ip link show "$iface" &>/dev/null; then
         print_warning "$iface already exists"
-
+        # Ask user if he wants to keep this interface or override it
         while true; do
             read -rp "[?] Do you want to (k)eep or (o)verride this interface? [K/o]: " choice
 
@@ -65,6 +65,7 @@ for i in $(seq 0 $((len - 1))); do
     print_info "[*] Creating $iface (VLAN $vlan_id)..."
 
     sudo ip link add link eth0 name eth0."$vlan_id" type vlan id "$vlan_id"
+    # Add into array for safe rollback if error occurs
     CREATED_INTERFACES+=("$iface")
     sudo ip link set eth0."$vlan_id" up
     sudo ip link set eth0."$vlan_id" promisc on

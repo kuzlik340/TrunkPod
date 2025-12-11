@@ -22,7 +22,7 @@ for i in $(seq 0 $((len - 1))); do
     honeypot_name=$(yq ".honeypots[$i].name" "$HONEYPOT_CONF" | tr -d '"')
 
     # Check IPs via arping
-    if sudo arping -c 3 -w 2 -I  eth0."$honeypot_vlan_id" -S "$honeypot_ip_addr" "$honeypot_ip_addr" > /dev/null; then # Using same IP for source and destination since eth0 does not have its own IP
+    if sudo arping -c 10 -w 1 -I  eth0."$honeypot_vlan_id" -S "$honeypot_ip_addr" "$honeypot_ip_addr" > /dev/null; then # Using same IP for source and destination since eth0 does not have its own IP
         print_error "IP ${RED}$honeypot_ip_addr${NC} for $honeypot_name on VLAN:$honeypot_vlan_id is ${RED}already in use${NC}. Please change it in the config"
         rc=1
     else

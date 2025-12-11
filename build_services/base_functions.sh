@@ -1,14 +1,11 @@
 # Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' 
 
 logfile="$(cat log_file_path)"
 
+source ../global_functions.sh
 
 print_logfile_message() {
-    echo -e "[*] Logfile for all 3 stage: $logfile"
+    print_info "Logs for build will be here: ${BLUE}$logfile${NC}"
 }
 
 # Buildah logger: logs only buildah output, errors will be seen in stdout
@@ -17,17 +14,17 @@ run_buildah() {
     rc=${PIPESTATUS[0]} 
 
     if [[ $rc -ne 0 ]]; then
-        echo -e "${RED}[!] BUILD ERROR:${NC} buildah failed on command: buildah $*" >&2
-        echo "[!] Please check log file: $logfile" >&2
+        print_error "Build failed on command: buildah $*" >&2
+        print_info "Please check logs here: ${BLUE}$logfile${NC}" >&2
         return $rc
     fi
 }
 
 
 rollback() {
-    echo -e "${RED}[!] ERROR occurred while running build${NC}"
+    print_error "Error occurred while running build${NC}"
     buildah rm $ctr > /dev/null
-    echo "[*] Build phase rollback completed"
+    print_info "[*] Build phase rollback completed"
     exit 1
 }
 # Will be called if error occurs

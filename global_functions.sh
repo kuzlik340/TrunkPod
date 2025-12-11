@@ -10,7 +10,15 @@ PURPLE='\033[0;35m'
 NC='\033[0m' 
 
 print_stage() {
-    echo -e "================================= ${PURPLE}$*${NC} ================================="
+    local total_width=100
+    local text="$*"
+    local text_len=${#text}
+    local padding=$(( total_width - text_len - 2 ))
+    local left_pad=$(( padding / 2 ))
+    local right_pad=$(( padding - left_pad ))
+    local left_fill=$(printf "%*s" "$left_pad" "" | tr ' ' '=')
+    local right_fill=$(printf "%*s" "$right_pad" "" | tr ' ' '=')
+    echo -e "${left_fill} ${PURPLE}$*${NC} ${right_fill}"
 }
 
 print_warning() {

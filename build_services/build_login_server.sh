@@ -16,20 +16,18 @@ else
     rest_services=("${@:3}")
 fi
 
-echo "[+] Adding LOGIN_SERVER service into your $IMAGE_NAME"
+print_info "Adding ${YELLOW}login_server${NC} service into your $IMAGE_NAME"
 
-echo "[*] Creating /app directory for login service"
+print_info "Creating /app directory for login service"
 run_buildah run "$ctr" mkdir -p /app
 
-echo "[*] Copying login_page.py"
+print_info "Copying login_page.py"
 run_buildah copy "$ctr" python_scripts/login_page.py /app/login_page.py
 
-echo "[*] Copying Supervisor configs"
+print_info "Copying Supervisor configs"
 run_buildah copy "$ctr" configs/supervisor/login_server.conf /etc/supervisor/conf.d/login_server.conf
 
-# Copy supervisord main config last (same as in SSH)
-run_buildah copy "$ctr" configs/supervisord.conf /etc/supervisor/supervisord.conf
-
+print_success "${YELLOW}login_server${NC} service was added to $IMAGE_NAME"
 if [[ $finish -eq 1 ]]; then
     ./finish.sh $IMAGE_NAME $ctr
 else

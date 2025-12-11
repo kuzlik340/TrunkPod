@@ -1,10 +1,10 @@
 #!/bin/bash
-# ------------------------------------------------
-# HoneyBridge: Honeypot Deployment Orchestrator
-# Controls staged setup, pod creation, interface
-# management, service configuration, and recovery.
-# ------------------------------------------------
 
+# =================================================
+# HoneyBridge: Honeypot Deployment Orchestrator.  |
+# Controls staged setup, pod creation, interface. |
+# management, service configuration, and recovery.|
+# =================================================
 
 set -euo pipefail
 
@@ -161,7 +161,7 @@ fi
 if [[ $finish -eq 1 ]]; then
     echo ""
     random_quote=$(shuf -n 1 quotes.txt)
-    print_info "The configuration is done. $random_quote :)"
+    echo -e "The configuration is done. $random_quote :)"
 fi
 
 #================================================ 1 STAGE ===============================================
@@ -175,6 +175,7 @@ fi
 #TODO strong passwd for ssh
 #TODO refactor
 #TODO add 3 stage building
+#TODO check for || true
 
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
