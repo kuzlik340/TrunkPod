@@ -165,6 +165,7 @@ fi
 #TODO --clean-logs to clean all logs                                                                                                    DONE                                                                                          
 #TODO do not rebuild base image if hash is still same                                                                                   DONE
 #TODO strong passwd for ssh
+#TODO refactor
 
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
@@ -183,7 +184,7 @@ fi
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
 
 #================================================ 3 STAGE ===============================================
-#TODO LOGS ENTIRELY NETFLOWS
+#TODO LOGS ENTIRELY NETFLOWS Telescope
 #TODO: make the --info flag to see the containers that are running and what services are there (real info via exec ip a)
 #TODO NETWORK TELESCOPE (OTHER PACKETS that are not for honeypots we have to log)(SNORT or SURICATA)
 #TODO EVERYTHING THAT GOES NOT TO CONTAINERS IP WE HAVE TO SEE IT AND LOG (stealth scan TCP:SYN) SOMETHING LIKE IDS
