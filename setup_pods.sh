@@ -8,6 +8,7 @@ NETWORK_CONF="configs/network.yaml"
 STATE_FILE="/run/honeybridge.d/honeybridge_pods_stage"
 # The directory with all services that could be bundled into honeypot
 SERVICES_DIR="honeypots/"
+rebuild_base=$1
 
 # Colors
 RED='\033[0;31m'
@@ -63,10 +64,13 @@ trap rollback ERR # Will be called if error occurs
 
 # Load last stage
 start_pos=$(load_pods_stage) 
-export XDG_RUNTIME_DIR="/run/user/$(id -u "$SUDO_USER")"
 # Build base image
-sudo -u "$SUDO_USER" bash -c ./build_services/build_base.sh 
+if [[ rebuild_base -eq 1 ]]; then
+    sudo bash -c ./build_services/build_base.sh 
+fi
 cd "$SCRIPT_DIR"
+
+mkdir -p /var/log/honeybridge/
 
 for i in $(seq "${start_pos}" $((len - 1))); do
     # Updating variables for safe rollback
@@ -83,25 +87,34 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     # ===================================================================
     # Deleting old supervisor config since it was overwritten and starting with template 
     rm -rf build_services/configs/supervisor
-    cp -r build_services/configs/supervisor_templates build_services/configs/supervisor
-
+    mkdir build_services/configs/supervisor
     echo "[*] Updating supervisor service ports"
     for idx in "${!service_names[@]}"; do
         name="${service_names[$idx]}"
         port="${service_ports[$idx]}"
+
+        cp build_services/configs/supervisor_templates/${name}.conf \
+        build_services/configs/supervisor/${name}.conf
+
+        if [[ -f "build_services/configs/supervisor_templates/${name}_logger.conf" ]]; then
+            cp "build_services/configs/supervisor_templates/${name}_logger.conf" \
+            "build_services/configs/supervisor/${name}_logger.conf"
+        fi
+
         conf_path="build_services/configs/supervisor/${name}.conf"
+
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
-            sudo -u "$SUDO_USER" bash -c "sed -i "s/insert_port/${port}/g" "$conf_path""
+            sudo -u "$SUDO_USER" bash -c \
+            "sed -i 's/insert_port/${port}/g' \"${conf_path}\""
         else
             echo -e "[!] ${YELLOW}WARNING:${NC} No supervisor config for service '$name' (${conf_path})"
         fi
     done
-
+    mkdir -p "/var/log/honeybridge/$honeypot_name"
     # This will create an image with all neccessary tools to run services
     echo "[+] Building image"
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
-    echo "sudo ./build_services/start.sh $honeypot_name ${service_names[@]}"
     sudo ./build_services/start.sh $honeypot_name ${service_names[@]}
     cd "$SCRIPT_DIR"
     # Update already deployed honeypot counter
@@ -113,7 +126,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     echo "[+] Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 
     echo "[*] Starting honeypot $honeypot_name"
-    container_hash=$(sudo -u "$SUDO_USER" bash -c "./run_honeypot.sh $honeypot_name")
+    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name")
     echo -e  "[+] ${GREEN}Container $honeypot_name started:${NC} $container_hash"
     current_container_name="$honeypot_name"
     container_running=1 # Safe rollback if error occurs
@@ -146,3 +159,5 @@ for i in $(seq "${start_pos}" $((len - 1))); do
 
     echo ""
 done
+
+rm -f build_services/log_file_path

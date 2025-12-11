@@ -23,7 +23,7 @@ run_buildah run "$ctr" mkdir -p /var/run/sshd
 run_buildah run "$ctr" ssh-keygen -A
 
 echo "[*] Copying sshd_config"
-run_buildah copy "$ctr" confis/sshd_config /etc/ssh/sshd_config
+run_buildah copy "$ctr" configs/sshd_config /etc/ssh/sshd_config
 
 echo "[*] Copying Supervisor configs"
 run_buildah copy "$ctr" configs/supervisor/ssh.conf /etc/supervisor/conf.d/ssh.conf

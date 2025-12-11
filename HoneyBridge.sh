@@ -18,6 +18,7 @@ STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe res
 STATE_FILE="/run/honeybridge.d/honeybridge_stage"
 LOGO_DIR="logos"    # Directory with the logos of the HoneyBridge project
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
+rebuild_base=0
 
 # Output project logo with some info
 random_logo=$(find "$LOGO_DIR" -type f | shuf -n 1)
@@ -29,8 +30,6 @@ echo ""
 
 # Create dir for saving stage
 sudo mkdir -p $STATE_DIR
-sudo ./build_services/log_file_create.sh
-
 # =================================== FUNCTIONS =========================================
 
 show_help() {
@@ -78,7 +77,8 @@ if [[ $# -gt 0 ]]; then
             ;;
         --clean-logs)
             echo -e "[*] Cleaning logs..."
-            rm -f /var/log/honeybridge*
+            rm -f /var/log/honeybridge_build*
+            rm -rf /var/log/honeybridge
             echo -e "${GREEN}[*]${NC} Logs are ${GREEN}succesfully${NC} cleaned"
             exit 0
             ;;
@@ -90,9 +90,18 @@ if [[ $# -gt 0 ]]; then
     esac
 fi
 
+set +e
+sudo bash -c ./check_changes.sh
+rc=$?
+set -e
 
-if ! sudo bash -c ./check_changes.sh; then
-    echo -e "[*] ${GREEN}The configs have been changed${NC}. Running configuration from scratch..."
+if [[ $rc -ne 0 ]]; then
+    if [[ $rc -eq 100 ]]; then
+        echo -e "[*] ${GREEN}Base image changed${NC}. Base image will be rebuilt"
+        rebuild_base=1
+    else
+        echo -e "[*] ${GREEN}The configs have been changed${NC}. Running configuration from scratch..."
+    fi
     clean
 fi
 
@@ -130,7 +139,8 @@ echo ""
 # Setup pods that will be running on each VLAN
 stage=$(load_stage)
 if [[ $stage -eq 2 ]]; then
-    if ! sudo bash -c ./setup_pods.sh; then
+    sudo ./build_services/log_file_create.sh
+    if ! sudo bash -c "./setup_pods.sh $rebuild_base"; then
         echo -e "[!] ${RED}Error while configuring pods. ${NC}Aborting configuration"
         exit 1
     fi
@@ -147,14 +157,14 @@ if [[ $finish -eq 1 ]]; then
 fi
 
 #================================================ 1 STAGE ===============================================
-#TODO make the clean flags do what they are supposed to do not megaclean                                                                DONE
-#TODO ssh twisted python (or strong passwd)                                                                                             
+#TODO make the clean flags do what they are supposed to do not megaclean                                                                DONE                                                                                           
 #TODO add errors handler in the build_services                                                                                          DONE                                                                            
 #TODO what if exit 1 in builder chain                                                                                                   DONE
 #TODO fix logs (Only errors to shell, other things to log file)                                                                         DONE
 #TODO every start new log file                                                                                                          DONE
-#TODO --clean-logs to clean all logs                                                                                                    
-#TODO do not rebuild base image if hash is still same
+#TODO --clean-logs to clean all logs                                                                                                    DONE                                                                                          
+#TODO do not rebuild base image if hash is still same                                                                                   DONE
+#TODO strong passwd for ssh
 
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
@@ -166,6 +176,7 @@ fi
 #TODO add dockerfile_builder and entrypoint_builder                                                                                     DONE
 #TODO check PID 1 in all containers                                                                                                     DONE
 #TODO add build stage before running every container and parser for list of services                                                    DONE
+#TODO error handler for yaml
 
 #================================================ 2 STAGE ===============================================
 #TODO shellcheck everywhere
@@ -189,6 +200,7 @@ fi
 #TODO make IP checker check for same IPs in the yaml and same ports
 #TODO multi-core to optimize time
 #TODO sudo only where it is has to be
+#TODO ssh twisted python 
 #TODO services:
     #   - name: login_server 
     #     port: 8000

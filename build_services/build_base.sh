@@ -15,7 +15,7 @@ print_logfile_message
 ctr=$(buildah from debian:stable-slim)
 
 #TODO fix command
-run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
+run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr" 
 #TODO  WHY works only with rc=
 echo "[*] Running update of base image" 
 run_buildah run "$ctr" -- bash -c "

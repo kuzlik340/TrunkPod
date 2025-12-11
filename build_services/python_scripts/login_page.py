@@ -1,6 +1,11 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 
+LOG_DIR = "/var/log/honeypot_logs"
+LOG_FILE = f"{LOG_DIR}/login_page_logs"
+
+os.makedirs(LOG_DIR, exist_ok=True)
+
 HTML_PAGE = """
 <!DOCTYPE html>
 <html>
@@ -33,19 +38,36 @@ HTML_PAGE = """
 """
 
 class Handler(BaseHTTPRequestHandler):
+    def log_event(self, message: str):
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        try:
+            with open(LOG_FILE, "a") as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except Exception as e:
+            print(f"[LOGGING ERROR] {e}")
 
     def do_GET(self):
+        attacker_ip = self.client_address[0]
+
+        msg = f"[VISIT] GET request from IP: {attacker_ip}"
+        print(msg)
+        self.log_event(msg)
+
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(HTML_PAGE.encode())
 
     def do_POST(self):
-        length = int(self.headers.get("Content-Length"))
+        attacker_ip = self.client_address[0]
+
+        length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
 
-        # Log credentials
-        print("[CREDENTIAL CAPTURED] →", data)
+        msg = f"[CREDENTIAL CAPTURED] From {attacker_ip} -> {data}"
+        print(msg)
+        self.log_event(msg)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
