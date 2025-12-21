@@ -62,7 +62,7 @@ for i in $(seq 0 $((len - 1))); do
         done
     fi
 
-    print_info "[*] Creating $iface (VLAN $vlan_id)..."
+    print_info "Creating $iface (VLAN $vlan_id)..."
 
     sudo ip link add link eth0 name eth0."$vlan_id" type vlan id "$vlan_id"
     # Add into array for safe rollback if error occurs

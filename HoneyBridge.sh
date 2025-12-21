@@ -173,7 +173,7 @@ fi
 #TODO --clean-logs to clean all logs                                                                                                    DONE                                                                                          
 #TODO do not rebuild base image if hash is still same                                                                                   DONE
 #TODO strong passwd for ssh                                                                                                             
-#TODO refactor                                                                                                                          
+#TODO refactor                                                                                                                          DONE
 #TODO check for || true                                                                                                                 
 #TODO error handler for yaml                                                                                                            
 
@@ -191,6 +191,7 @@ fi
 #================================================ 2 STAGE ===============================================
 #TODO shellcheck everywhere
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
+#TODO everytime new logs or somehow save old directory?
 
 #================================================ 3 STAGE ===============================================
 #TODO LOGS ENTIRELY NETFLOWS Telescope
