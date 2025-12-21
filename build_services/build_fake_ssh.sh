@@ -18,10 +18,14 @@ else
     rest_services=("${@:3}")
 fi
 
-
 run_buildah run "$ctr" virtualenv try-twisted
-run_buildah run "$ctr" . try-twisted/bin/activate
-run_buildah run "$ctr" pip install twisted[tls]
+#run_buildah run "$ctr" . try-twisted/bin/activate
+run_buildah run "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
+run_buildah run "$ctr" mkdir -p /app
+run_buildah copy "$ctr" python_scripts/fake_ssh.py /app/fake_ssh.py
+
+print_info "Copying Supervisor configs"
+run_buildah copy "$ctr" configs/supervisor/fake_ssh.conf /etc/supervisor/conf.d/fake_ssh.conf
 
 print_success "${YELLOW}FAKE_SSH${NC} service was added to $IMAGE_NAME"
 

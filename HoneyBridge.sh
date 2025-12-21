@@ -201,6 +201,7 @@ fi
 
 #================================================ 4 STAGE ===============================================
 #TODO CAPABLITIES on the podman 
+#TODO secure web page
 #TODO: map user and run without sudo
 #TODO some pentests (Metasploit and others), lateral movement check
 #TODO Mitre ATT&CK 
