@@ -162,6 +162,7 @@ if [[ $finish -eq 1 ]]; then
     echo ""
     random_quote=$(shuf -n 1 assets/quotes.txt)
     echo -e "The configuration is done. $random_quote :)"
+    echo -e "Logs of honeypots themselves could be found in /var/log/honeypots"
 fi
 
 #================================================ 1 STAGE ===============================================
