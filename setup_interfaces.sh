@@ -52,7 +52,7 @@ for i in $(seq 0 $((len - 1))); do
                         ;;
                     o|O)
                         print_info "Overriding existing $iface"
-                        sudo ip link delete "$iface" || true
+                        sudo ip link delete "$iface"
                         break        # break inner loop and create interface
                         ;;
                     *)

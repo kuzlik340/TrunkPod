@@ -93,8 +93,8 @@ for i in $(seq "${start_pos}" $((len - 1))); do
         port="${service_ports[$idx]}"
 
         # Copy template supervisor config
-        cp build_services/configs/supervisor_templates/${name}.conf \
-        build_services/configs/supervisor/${name}.conf
+        cp build_services/configs/supervisor_templates/"${name}".conf \
+        build_services/configs/supervisor/"${name}".conf
 
         conf_path="build_services/configs/supervisor/${name}.conf"
 
@@ -108,7 +108,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     # Creating directory for output logs (When intruder connected to honeypot)
     mkdir -p "/var/log/honeybridge/$honeypot_name"
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
-    sudo ./build_services/start.sh $honeypot_name ${service_names[@]}
+    sudo ./build_services/start.sh "$honeypot_name" "${service_names[@]}"
     cd "$SCRIPT_DIR"
     # Update already deployed honeypot counter
     current_pos=${i}

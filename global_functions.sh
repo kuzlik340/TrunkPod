@@ -9,6 +9,15 @@ BLUE='\033[1;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m' 
 
+yq_safe() {
+    local result
+    if ! result=$(yq "$@" 2>/dev/null); then
+        print_error "YQ failed: check if config files are valid YAML"
+        exit 1
+    fi
+    echo "$result"
+}
+
 print_stage() {
     local total_width=100
     local text="$*"

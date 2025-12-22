@@ -24,18 +24,40 @@ echo -e "\n"
 echo "HoneyBridge — Honeypot Management Toolkit"
 echo ""
 
+if [[ "$EUID" -ne 0 ]]; then
+    print_error "This program must be run as root. Use sudo."
+    exit 1
+fi
+
 # Create dir for saving stage
 sudo mkdir -p $STATE_DIR
 # =================================== FUNCTIONS =========================================
 
 show_help() {
-    echo "HoneyBridge Options:"
-    echo "  --help       Show this help message"
-    echo "  --clean      Remove previous configuration state and start fresh"
-    echo "  --megaclean  Remove previous configuration state and running pods" #TODO legacy
-    echo "  honeypots show" #TODO make this
-    echo "  honeypots ps" #TODO make this
+    cat <<'EOF'
+HoneyBridge — Honeypot Deployment Framework
+
+Usage:
+  honeybridge [OPTIONS]
+
+Options:
+  --help            Show this help message and exit
+  --clean           Remove previous configuration state and delete all deployed honeypots
+  --clean-logs      Delete all produced logs, including honeypot alert logs
+
+Behavior:
+  If no options are provided, HoneyBridge reads configuration files from the
+  'configs/' directory and deploys honeypots according to the configuration.
+
+Examples:
+  sudo ./HoneyBridge
+  sudo ./HoneyBridge --clean
+  sudo ./HoneyBridge --clean-logs
+
+Notice! The program won't start until run with sudo.
+EOF
 }
+
 
 # Helper functions to find where the program was stopped
 save_stage() {
@@ -58,7 +80,6 @@ clean() {
     print_success "State reset to 0"
     container_hashes=$(sudo podman rm -f -a)
     print_success "All pods are deleted"
-    container_hashes=$(sudo podman rm -f -a)
 }
 
 # =======================================================================================
@@ -75,7 +96,6 @@ if [[ $# -gt 0 ]]; then
             exit 0
             ;;
         --clean-logs)
-            
             print_info "Cleaning logs..."
             rm -f /var/log/honeybridge_build*
             rm -rf /var/log/honeybridge
@@ -162,7 +182,7 @@ if [[ $finish -eq 1 ]]; then
     echo ""
     random_quote=$(shuf -n 1 assets/quotes.txt)
     echo -e "The configuration is done. $random_quote :)"
-    echo -e "Logs of honeypots themselves could be found in /var/log/honeypots"
+    echo -e "Logs of honeypots themselves could be found in ${BLUE}/var/log/honeypots${NC}"
 fi
 
 #================================================ 1 STAGE ===============================================
@@ -172,12 +192,9 @@ fi
 #TODO fix logs (Only errors to shell, other things to log file)                                                                         DONE
 #TODO every start new log file                                                                                                          DONE
 #TODO --clean-logs to clean all logs                                                                                                    DONE                                                                                          
-#TODO do not rebuild base image if hash is still same                                                                                   DONE
-#TODO strong passwd for ssh                                                                                                             
+#TODO do not rebuild base image if hash is still same                                                                                   DONE                                                                                                         
 #TODO refactor                                                                                                                          DONE
-#TODO check for || true                                                                                                                 
-#TODO error handler for yaml                                                                                                            
-
+#TODO check for || true                                                                                                                 DONE                                                                                                  
 #TODO check changes in yamls and base_image via hashes                                                                                  DONE
 #TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
 #TODO IP checker in use                                                                                                                 DONE
@@ -190,9 +207,10 @@ fi
 #TODO add build stage before running every container and parser for list of services                                                    DONE
 
 #================================================ 2 STAGE ===============================================
-#TODO shellcheck everywhere
-#TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS. 
-#TODO everytime new logs or somehow save old directory?
+#TODO shellcheck everywhere                                                                                                             DONE
+#TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS.                         DONE
+#TODO everytime new logs or somehow save old directory?                                                                                 DONE
+#TODO error handler for yaml          
 
 #================================================ 3 STAGE ===============================================
 #TODO LOGS ENTIRELY NETFLOWS Telescope

@@ -5,11 +5,13 @@
 # already in use in the network where honeypot |
 # will be added                                |
 # ==============================================
-
 set -euo pipefail
 source global_functions.sh
 
+set +e
 len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
+echo "MEOW"
+set -e
 
 print_stage "STAGE 2: IP Checker"
 print_info "Checking if desired IPs for honeypots are already in use. This will take some time..."
