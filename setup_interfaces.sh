@@ -9,13 +9,12 @@ set -euo pipefail
 
 source global_functions.sh
 
-len=$(yq '.vlans | length' "$NETWORK_CONF")
 # Array for rollback function
 CREATED_INTERFACES=()
 
 print_stage "STAGE 1: Interface configuration"
 print_info "Configuring interfaces based on the $NETWORK_CONF"
-
+yq_safe len '.vlans | length' "$NETWORK_CONF"
 # Function to handle rollback if error occures during setup
 rollback() {
     print_error "Error occurred while interface setup.${NC} Rolling back..."
@@ -31,7 +30,7 @@ trap rollback ERR
 
 for i in $(seq 0 $((len - 1))); do
     # Reading configuration
-    vlan_id=$(yq ".vlans[$i].id" "$NETWORK_CONF" | tr -d '"')
+    yq_safe vlan_id -r ".vlans[$i].id" "$NETWORK_CONF"
     iface="eth0.$vlan_id"
     
     # Check if interface already exists

@@ -9,13 +9,18 @@ BLUE='\033[1;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m' 
 
+# Function with assign-by-reference method to make error handling
 yq_safe() {
-    local result
-    if ! result=$(yq "$@" 2>/dev/null); then
-        print_error "YQ failed: check if config files are valid YAML"
+    local __outvar="$1"
+    shift
+
+    local out
+    if ! out=$(yq "$@" 2>/dev/null); then
+        print_error "YQ failed: invalid YAML"
         exit 1
     fi
-    echo "$result"
+
+    printf -v "$__outvar" '%s' "$out"
 }
 
 print_stage() {

@@ -8,20 +8,16 @@
 set -euo pipefail
 source global_functions.sh
 
-set +e
-len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
-echo "MEOW"
-set -e
-
 print_stage "STAGE 2: IP Checker"
 print_info "Checking if desired IPs for honeypots are already in use. This will take some time..."
 rc=0
+yq_safe len '.honeypots | length' "$HONEYPOT_CONF"
 
 for i in $(seq 0 $((len - 1))); do
     # Read from .yaml config
-    honeypot_ip_addr=$(yq ".honeypots[$i].ip" "$HONEYPOT_CONF" | tr -d '"')
-    honeypot_vlan_id=$(yq ".honeypots[$i].vlan" "$HONEYPOT_CONF" | tr -d '"')
-    honeypot_name=$(yq ".honeypots[$i].name" "$HONEYPOT_CONF" | tr -d '"')
+    yq_safe honeypot_ip_addr -r ".honeypots[$i].ip" "$HONEYPOT_CONF" 
+    yq_safe honeypot_vlan_id -r ".honeypots[$i].vlan" "$HONEYPOT_CONF" 
+    yq_safe honeypot_name -r ".honeypots[$i].name" "$HONEYPOT_CONF"
 
     # Check IPs via arping
     if sudo arping -c 10 -w 1 -I  eth0."$honeypot_vlan_id" -S "$honeypot_ip_addr" "$honeypot_ip_addr" > /dev/null; then # Using same IP for source and destination since eth0 does not have its own IP

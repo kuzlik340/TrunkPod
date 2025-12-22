@@ -76,11 +76,11 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     macvlan_moved=0
     container_running=0
     # ==================== Reading configuration ========================
-    honeypot_name=$(yq ".honeypots[$i].name" "$HONEYPOT_CONF" | tr -d '"')
-    honeypot_ip=$(yq ".honeypots[$i].ip" "$HONEYPOT_CONF" | tr -d '"')
-    honeypot_vlan_id=$(yq ".honeypots[$i].vlan" "$HONEYPOT_CONF" | tr -d '"')
-    honeypot_mac_addr=$(yq ".honeypots[$i].mac" "$HONEYPOT_CONF" | tr -d '"')
-    network_range=$(yq ".vlans[] | select(.id == $honeypot_vlan_id) | .range" $NETWORK_CONF | tr -d '"')
+    yq_safe honeypot_name -r ".honeypots[$i].name" "$HONEYPOT_CONF"
+    yq_safe honeypot_ip -r ".honeypots[$i].ip" "$HONEYPOT_CONF"
+    yq_safe honeypot_vlan_id -r ".honeypots[$i].vlan" "$HONEYPOT_CONF"
+    yq_safe honeypot_mac_addr -r ".honeypots[$i].mac" "$HONEYPOT_CONF"
+    yq_safe network_range -r ".vlans[] | select(.id == $honeypot_vlan_id) | .range" $NETWORK_CONF
     mapfile -t service_names < <(yq -r ".honeypots[$i].services[].name" "$HONEYPOT_CONF")
     mapfile -t service_ports < <(yq -r ".honeypots[$i].services[].port" "$HONEYPOT_CONF")
     # ===================================================================
