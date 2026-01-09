@@ -63,7 +63,7 @@ trap rollback ERR # Will be called if error occurs
 start_pos=$(load_pods_stage) 
 
 # Build base image if it was changed
-if [[ rebuild_base -eq 1 ]]; then # TODO: HOW TF THIS WORKING THERE IS NO $
+if [[ $rebuild_base -eq 1 ]]; then
     sudo bash -c ./build_services/build_base.sh 
     cd "$SCRIPT_DIR" 
 fi

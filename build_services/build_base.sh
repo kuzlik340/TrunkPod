@@ -10,7 +10,7 @@ source ../global_functions.sh
 
 trap rollback ERR 
 
-print_info "Creating base image"
+print_info "Creating base image" 
 
 print_logfile_message
 ctr=$(buildah from debian:stable-slim)
