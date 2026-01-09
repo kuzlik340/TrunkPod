@@ -14,4 +14,5 @@ run_buildah config \
     "$ctr"
 
 run_buildah commit "$ctr" "$IMAGE_NAME"
+run_buildah rm $ctr
 print_success "Build complete: $IMAGE_NAME"

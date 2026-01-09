@@ -30,4 +30,5 @@ run_buildah run "$ctr" -- bash -c "
 run_buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
 run_buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
 run_buildah commit "$ctr" honeypot-base
+run_buildah rm "$ctr"
 print_success "Base image created"

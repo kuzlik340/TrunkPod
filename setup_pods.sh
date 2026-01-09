@@ -13,7 +13,6 @@ source global_functions.sh
 STATE_FILE="/run/honeybridge.d/honeybridge_pods_stage"
 # The directory with all services that could be bundled into honeypot
 rebuild_base=$1
-
 # Length of the honeypots.yaml
 len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
 # Directory in which this script is placed
@@ -71,6 +70,9 @@ fi
 # Create directory for output logs of all honeypots
 mkdir -p /var/log/honeybridge/
 
+# Enable logging for ngt
+sudo sysctl -w net.netfilter.nf_log_all_netns=1 > /dev/null
+ 
 for i in $(seq "${start_pos}" $((len - 1))); do
     # Updating variables for safe rollback
     macvlan_moved=0
@@ -141,6 +143,16 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     IFS=/ read -r _ mask <<< "$network_range"
     sudo nsenter -t "$pid" -n ip addr add "${honeypot_ip}"/"${mask}" dev eth0
     sudo nsenter -t "$pid" -n ip link set eth0 up
+
+    sudo nsenter -t "$pid" -n nft add table inet filter
+    sudo nsenter -t "$pid" -n nft add chain inet filter input '{ type filter hook input priority 0; policy accept; }'
+    sudo nsenter -t "$pid" -n nft add rule inet filter input \
+        iifname "eth0" tcp flags syn counter
+    sudo nsenter -t "$pid" -n nft add rule inet filter input \
+        iifname "eth0" tcp flags syn limit rate 3/second burst 5 packets log prefix \"[HoneyBridge] honeypot1: SYN_SCAN \" level warn
+    sudo nsenter -t "$pid" -n nft add rule inet filter input \
+        iifname "eth0" tcp flags == 0 limit rate 3/second burst 5 packets log prefix \"[HoneyBridge] honeypot1: NULL_SCAN \" level warn
+
 
     # Output info about the running honeypot
     print_success "Honeypot $honeypot_name ${GREEN}ready${NC}"
