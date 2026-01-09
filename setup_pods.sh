@@ -103,6 +103,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
             sed -i "s/insert_port/${port}/g" "${conf_path}"
+            sed -i "s/insert_name/${honeypot_name}/g" "${conf_path}"
         else
             print_warning "No supervisor config for service '$name' (${conf_path})"
         fi
@@ -139,7 +140,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     # Configure macvlan inside container
     print_info "Configuring pod networking"
     sudo nsenter -t "$pid" -n ip link set macvlan_temp name eth0
-    # Read the network mask (Example: 192.168.20.0/24)
+    # Read the network mask (Example: 192.168.20.0/24 -> 24)
     IFS=/ read -r _ mask <<< "$network_range"
     sudo nsenter -t "$pid" -n ip addr add "${honeypot_ip}"/"${mask}" dev eth0
     sudo nsenter -t "$pid" -n ip link set eth0 up
@@ -149,9 +150,9 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     sudo nsenter -t "$pid" -n nft add rule inet filter input \
         iifname "eth0" tcp flags syn counter
     sudo nsenter -t "$pid" -n nft add rule inet filter input \
-        iifname "eth0" tcp flags syn limit rate 3/second burst 5 packets log prefix \"[HoneyBridge] honeypot1: SYN_SCAN \" level warn
+        iifname "eth0" tcp flags syn limit rate 3/second burst 5 packets log prefix \"[HoneyBridge][${honeypot_name}] TCP_SYN_SCAN \" level warn
     sudo nsenter -t "$pid" -n nft add rule inet filter input \
-        iifname "eth0" tcp flags == 0 limit rate 3/second burst 5 packets log prefix \"[HoneyBridge] honeypot1: NULL_SCAN \" level warn
+        iifname "eth0" tcp flags == 0 limit rate 3/second burst 5 packets log prefix \"[HoneyBridge][${honeypot_name}] TCP_NULL_SCAN \" level warn
 
 
     # Output info about the running honeypot

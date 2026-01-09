@@ -10,17 +10,15 @@ from datetime import datetime
 import os
 import sys
 
-LOG_DIR = "/var/log/honeypot_logs"
-LOG_FILE = f"{LOG_DIR}/fake_ssh_logs"
-
-os.makedirs(LOG_DIR, exist_ok=True)
 
 # =========================
 # Configuration
 # =========================
 port = 22
-if len(sys.argv) > 1:
+name = "honeypot"
+if len(sys.argv) >= 3:
     port = int(sys.argv[1])
+    name = sys.argv[2]
 AUTH_DELAY_SECONDS = 4   # artificial delay per attempt
 SSH_PORT = port         
 HOST_KEY_FILE = "ssh_host_key"
@@ -41,10 +39,6 @@ def generate_host_key():
                 encryption_algorithm=serialization.NoEncryption(),
             )
         )
-
-def honeypot_log(line):
-    with open(LOG_FILE, "a") as f:
-        f.write(line + "\n")
 
 try:
     open(HOST_KEY_FILE)
@@ -83,8 +77,7 @@ class RejectAllPasswords:
         username = creds.username.decode(errors="ignore")
         password = creds.password.decode(errors="ignore")
         message = (f"[!] Login attempt: {username} : {password}")
-        timestamp = datetime.utcnow().isoformat()
-        honeypot_log(f"[{timestamp}] Login attempt: {username} : {password}")
+        print(f"[HoneyBridge][{name}][FAKE_SSH] Login attempt: {username} : {password}")
 
 
         d = defer.Deferred()
@@ -102,10 +95,9 @@ class RejectAllPasswords:
 class LoggingSSHTransport(SSHServerTransport):
     def connectionMade(self):
         peer = self.transport.getPeer()
-        timestamp = datetime.utcnow().isoformat()
 
-        honeypot_log(
-            f"[{timestamp}] SSH connection started from "
+        print(
+            f"[HoneyBridge][{name}][FAKE_SSH] SSH connection started from "
             f"{peer.host}:{peer.port}"
         )
 

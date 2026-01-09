@@ -2,11 +2,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import os
 import time
+from datetime import datetime
 
-LOG_DIR = "/var/log/honeypot_logs"
-LOG_FILE = f"{LOG_DIR}/login_page_logs"
-
-os.makedirs(LOG_DIR, exist_ok=True)
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -38,23 +35,13 @@ HTML_PAGE = """
 </body>
 </html>
 """
-
+name = "honeypot"
+port = 9000
 class Handler(BaseHTTPRequestHandler):
-    def log_event(self, message: str):
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        try:
-            with open(LOG_FILE, "a") as f:
-                f.write(f"[{timestamp}] {message}\n")
-        except Exception as e:
-            print(f"[LOGGING ERROR] {e}")
-
     def do_GET(self):
         attacker_ip = self.client_address[0]
-
-        msg = f"[VISIT] GET request from IP: {attacker_ip}"
+        msg = f"[HoneyBridge][{name}][LOGIN_PAGE] GET request from IP: {attacker_ip}"
         print(msg)
-        self.log_event(msg)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -66,10 +53,8 @@ class Handler(BaseHTTPRequestHandler):
 
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
-
-        msg = f"[CREDENTIAL CAPTURED] From {attacker_ip} -> {data}"
+        msg = f"[HoneyBridge][{name}][LOGIN_PAGE] crdential captured from {attacker_ip} -> {data}"
         print(msg)
-        self.log_event(msg)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -78,11 +63,13 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(b"<h2>Invalid credentials</h2>")
 
 def run():
-    port = 8000
-    if len(sys.argv) > 1:
+    global port, name
+    if len(sys.argv) >= 3:
         port = int(sys.argv[1])
+        name = sys.argv[2]
     server = HTTPServer(("0.0.0.0", port), Handler)
-    print("Honeypot running on http://0.0.0.0:8000")
+    msg = f"[HoneyBridge][{name}][LOGIN_PAGE] Honeypot running, just an info message"
+    print(msg)
     server.serve_forever()
 
 if __name__ == "__main__":

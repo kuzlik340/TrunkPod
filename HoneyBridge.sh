@@ -167,6 +167,7 @@ fi
 stage=$(load_stage)
 if [[ $stage -eq 2 ]]; then
     sudo ./build_services/log_file_create.sh
+    timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     if ! sudo bash -c "./setup_pods.sh $rebuild_base"; then
         print_error "Error while configuring pods. Aborting configuration"
         exit 1
@@ -182,7 +183,7 @@ if [[ $finish -eq 1 ]]; then
     echo ""
     random_quote=$(shuf -n 1 assets/quotes.txt)
     echo -e "The configuration is done. $random_quote :)"
-    echo -e "Logs of honeypots themselves could be found in ${BLUE}/var/log/honeypots${NC}"
+    echo -e "Logs of honeypots themselves could be seen by running ${BLUE}sudo journalctl -f --since '$timestamp' | grep --line-buffered '\[HoneyBridge\]'${NC}"
 fi
 
 #================================================ 1 STAGE ===============================================
