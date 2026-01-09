@@ -42,6 +42,7 @@ load_pods_stage() {
 rollback() {
     print_error "Error occurred while setting up pods"
     print_info "Rolling back..."
+
     if [[ $macvlan_moved -eq 0 ]]; then
         print_info "Deleting macvlan_temp"
         sudo ip link delete macvlan_temp 2>/dev/null
@@ -62,7 +63,7 @@ trap rollback ERR # Will be called if error occurs
 start_pos=$(load_pods_stage) 
 
 # Build base image if it was changed
-if [[ rebuild_base -eq 1 ]]; then
+if [[ rebuild_base -eq 1 ]]; then # TODO: HOW TF THIS WORKING THERE IS NO $
     sudo bash -c ./build_services/build_base.sh 
     cd "$SCRIPT_DIR" 
 fi
@@ -96,14 +97,15 @@ for i in $(seq "${start_pos}" $((len - 1))); do
 
         # Copy template supervisor config
         cp build_services/configs/supervisor_templates/"${name}".conf \
-        build_services/configs/supervisor/"${name}".conf
+        build_services/configs/supervisor/"${name}${port}".conf
 
-        conf_path="build_services/configs/supervisor/${name}.conf"
+        conf_path="build_services/configs/supervisor/"${name}${port}".conf"
 
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
+            sed -i "s/insert_ps_name/${name}${port}/g" "${conf_path}"
             sed -i "s/insert_port/${port}/g" "${conf_path}"
-            sed -i "s/insert_name/${honeypot_name}/g" "${conf_path}"
+            sed -i "s/insert_honeypot_name/${honeypot_name}/g" "${conf_path}"
         else
             print_warning "No supervisor config for service '$name' (${conf_path})"
         fi

@@ -9,6 +9,8 @@ BLUE='\033[1;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m' 
 
+
+error=0
 # Function with assign-by-reference method to make error handling
 yq_safe() {
     local __outvar="$1"

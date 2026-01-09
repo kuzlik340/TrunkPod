@@ -9,29 +9,12 @@ trap rollback ERR
 
 print_info "Adding ${YELLOW}FAKE_SSH${NC} service into your $IMAGE_NAME"
 
-finish=0
-rest_services="none"
-
-if [[ $# -eq 2 ]]; then # Check if finish
-    finish=1
-else
-    rest_services=("${@:3}")
-fi
 
 print_info "Copying python script for login page"
 run_buildah run "$ctr" mkdir -p /app
-run_buildah copy "$ctr" python_scripts/fake_ssh.py /app/fake_ssh.py
-
-print_info "Copying Supervisor configs"
-run_buildah copy "$ctr" configs/supervisor/fake_ssh.conf /etc/supervisor/conf.d/fake_ssh.conf
+run_buildah copy "$ctr" python_scripts/fake_ssh.py /app/fake_ssh.py #TODO rm new configured supervisord
 
 print_success "${YELLOW}FAKE_SSH${NC} service was added to $IMAGE_NAME"
 
-if [[ $finish -eq 1 ]]; then
-    ./finish.sh $IMAGE_NAME $ctr
-else
-    trap - ERR
-    ./build_"${rest_services[0]}".sh $IMAGE_NAME $ctr ${rest_services[@]:1}
-fi
 
 

@@ -24,7 +24,7 @@ run_buildah() {
 rollback() {
     print_error "Error occurred while running build${NC}"
     buildah rm $ctr > /dev/null
-    print_info "[*] Build phase rollback completed"
+    print_info "Build phase rollback completed"
     exit 1
 }
 # Will be called if error occurs

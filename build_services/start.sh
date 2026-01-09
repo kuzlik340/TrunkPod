@@ -15,7 +15,17 @@ print_logfile_message
 print_info "Starting build for $IMAGE_NAME"
 ctr=$(buildah from localhost/honeypot-base 2>/dev/null)
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
-trap - ERR  # Delete our rollback implementation, the new build module have its own
-./build_"${services[0]}".sh $IMAGE_NAME $ctr ${services[@]:1}
+
+for service in "${services[@]}"; do
+    print_info "Copying Supervisor configs"
+    run_buildah copy "$ctr" configs/supervisor/"$service*".conf /etc/supervisor/conf.d/
+    print_info "Building service: $service"
+    trap - ERR
+    ./build_"$service".sh "$IMAGE_NAME" "$ctr"
+    trap rollback ERR
+done
+rm -rf configs/supervisor
+./finish.sh $IMAGE_NAME $ctr
+
 
 
