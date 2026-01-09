@@ -27,6 +27,8 @@ run_buildah run "$ctr" -- bash -c "
         openssh-server \
         && apt-get clean && rm -rf /var/lib/apt/lists/*
 "
+run_buildah run "$ctr" virtualenv try-twisted
+run_buildah run "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
 run_buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
 run_buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
 run_buildah commit "$ctr" honeypot-base

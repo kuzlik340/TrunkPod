@@ -211,13 +211,13 @@ fi
 #TODO shellcheck everywhere                                                                                                             DONE
 #TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS.                         DONE
 #TODO everytime new logs or somehow save old directory?                                                                                 DONE
+#TODO Log in one file, also with tcpdump or smth like that                                                                              DONE
+#TODO log into one file from nftablesODO create in logging commit transaction so won't be "HonHoneypot2 Null_scaneypot1 SYN scan"       DONE  
 #TODO error handler for yaml
 #TODO error handler not in depth
 #TODO check build_service    
 #TODO Enable yaml conf checker
-#TODO Log in one file, also with tcpdump or smth like that 
-#TODO log into one file from nftablesODO create in logging commit transaction so won't be "HonHoneypot2 Null_scaneypot1 SYN scan"
-#TODO maybe in clean delete hashes?     
+
 
 #================================================ 3 STAGE ===============================================
 #TODO LOGS ENTIRELY NETFLOWS Telescope

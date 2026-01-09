@@ -18,10 +18,7 @@ else
     rest_services=("${@:3}")
 fi
 
-run_buildah run "$ctr" virtualenv try-twisted
-#run_buildah run "$ctr" . try-twisted/bin/activate
-print_info "Installing dependencies into your $IMAGE_NAME"
-run_buildah run "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
+print_info "Copying python script for login page"
 run_buildah run "$ctr" mkdir -p /app
 run_buildah copy "$ctr" python_scripts/fake_ssh.py /app/fake_ssh.py
 
