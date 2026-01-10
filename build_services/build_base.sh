@@ -13,6 +13,7 @@ trap rollback ERR
 print_info "Creating base image" 
 
 print_logfile_message
+
 ctr=$(buildah from debian:stable-slim)
 
 #TODO fix command
@@ -31,6 +32,8 @@ run_buildah run "$ctr" virtualenv try-twisted
 run_buildah run "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
 run_buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
 run_buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
-run_buildah commit "$ctr" honeypot-base
-run_buildah rm "$ctr"
-print_success "Base image created"
+if podman image exists localhost/honeypot-base:latest; then
+    podman image rm -f localhost/honeypot-base:latest > /dev/null
+fi
+run_buildah commit --rm "$ctr" honeypot-base:latest
+print_success "Base image created" 

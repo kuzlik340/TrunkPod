@@ -12,7 +12,8 @@ run_buildah copy "$ctr" configs/supervisord.conf /etc/supervisor/supervisord.con
 run_buildah config \
     --cmd '["/usr/bin/supervisord","-c","/etc/supervisor/supervisord.conf"]' \
     "$ctr"
-
-run_buildah commit "$ctr" "$IMAGE_NAME"
-run_buildah rm $ctr
+if podman image exists localhost/"$IMAGE_NAME":latest; then
+    podman image rm -f localhost/"$IMAGE_NAME":latest > /dev/null
+fi
+run_buildah commit --rm "$ctr" "$IMAGE_NAME"
 print_success "Build complete: $IMAGE_NAME"
