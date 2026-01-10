@@ -1,11 +1,11 @@
 # Colors
 
-logfile="$(cat log_file_path)"
+logfile="honeybridge_build_current.log"
 
 source ../global_functions.sh
 
 print_logfile_message() {
-    print_info "Logs for build will be here: ${BLUE}$logfile${NC}"
+    print_info "Logs for build will are accessible via symlink: ${BLUE}build_services/$logfile${NC}"
 }
 
 # Buildah logger: logs only buildah output, errors will be seen in stdout

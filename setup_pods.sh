@@ -166,5 +166,3 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     echo -e "${NC}"
     echo ""
 done
-
-rm -f build_services/log_file_path
