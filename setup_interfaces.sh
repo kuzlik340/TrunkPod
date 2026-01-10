@@ -20,7 +20,7 @@ rollback() {
     print_error "Error occurred while interface configuration"
     for iface in "${CREATED_INTERFACES[@]}"; do
         print_deletion "Deleting $iface"
-        sudo ip link delete "$iface" 2>/dev/null || true
+        ip link delete "$iface" 2>/dev/null || true
     done
     print_info "Interface configuration rollback completed"
     exit 1
@@ -51,7 +51,7 @@ for i in $(seq 0 $((len - 1))); do
                         ;;
                     o|O)
                         print_info "Overriding existing $iface"
-                        sudo ip link delete "$iface"
+                        ip link delete "$iface"
                         break        # break inner loop and create interface
                         ;;
                     *)
@@ -63,11 +63,11 @@ for i in $(seq 0 $((len - 1))); do
 
     print_info "Creating $iface (VLAN $vlan_id)..."
 
-    sudo ip link add link eth0 name eth0."$vlan_id" type vlan id "$vlan_id"
+    ip link add link eth0 name eth0."$vlan_id" type vlan id "$vlan_id"
     # Add into array for safe rollback if error occurs
     CREATED_INTERFACES+=("$iface")
-    sudo ip link set eth0."$vlan_id" up
-    sudo ip link set eth0."$vlan_id" promisc on
+    ip link set eth0."$vlan_id" up
+    ip link set eth0."$vlan_id" promisc on
     if ! ip link show "$iface" | grep -q "state UP"; then
         print_error "$iface failed to come UP"
         exit 1

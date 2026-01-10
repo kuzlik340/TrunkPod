@@ -7,36 +7,24 @@
 
 source global_functions.sh
 
+set -euo pipefail
+
+install_package () {
+    if ! dpkg -s $1 &>/dev/null; then
+        installed=1
+        print_info "Installing $1"
+        echo ""
+        apt install -y $1
+    fi
+}
 print_info "Checking tools"
 
 installed=0
-if ! dpkg -s podman &>/dev/null; then
-    installed=1
-    print_info "Installing podman"
-    echo ""
-    sudo apt install -y podman
-fi
 
-if ! dpkg -s arping &>/dev/null; then
-    installed=1
-    print_info "Installing arping"
-    echo ""
-    sudo apt install -y arping
-fi
-
-if ! dpkg -s yq &>/dev/null; then
-    installed=1
-    print_info "Installing yq"
-    echo ""
-    sudo apt install -y yq
-fi
-
-if ! dpkg -s python3 &>/dev/null; then
-    installed=1
-    print_info "Installing python3"
-    echo ""
-    sudo apt install -y python3
-fi
+install_package podman
+install_package arping
+install_package yq
+install_package python3
 
 if [ "$installed" -eq 1 ]; then
     print_success "Tools are installed"

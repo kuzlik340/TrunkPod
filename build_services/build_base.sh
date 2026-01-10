@@ -21,17 +21,15 @@ run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
 #TODO  WHY works only with rc=
 print_info "Running update of base image. This will take some time..." 
 run_buildah run "$ctr" -- bash -c "
-    apt-get uppdate &&
+    apt-get update &&
     apt-get install -y --no-install-recommends \
-        bash sudo ca-certificates supervisor \
+        bash ca-certificates supervisor \
         python3 python3-pip python3-virtualenv \
         openssh-server \
         && apt-get clean && rm -rf /var/lib/apt/lists/*
 "
 run_buildah run "$ctr" virtualenv try-twisted
 run_buildah run "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
-run_buildah run "$ctr" useradd -m -s /bin/bash -u 1000 -G sudo admin
-run_buildah run "$ctr" bash -c "echo 'admin:admin' | chpasswd"
 if podman image exists localhost/honeypot-base:latest; then
     podman image rm -f localhost/honeypot-base:latest > /dev/null
 fi

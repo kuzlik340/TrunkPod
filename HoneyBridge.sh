@@ -8,15 +8,15 @@
 
 set -euo pipefail
 
-source global_functions.sh
-
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)" # Change directory to HoneyBridge and save it
-LOGO_DIR="$SCRIPT_DIR/assets/logos" # Directory with the logos of the HoneyBridge project   
+source "$SCRIPT_DIR"/global_functions.sh
+
+LOGO_DIR="$SCRIPT_DIR"/assets/logos # Directory with the logos of the HoneyBridge project   
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
 rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
 
 # Create dir for saving stage
-sudo mkdir -p $STATE_DIR
+mkdir -p $STATE_DIR
 
 # =================================== FUNCTIONS =========================================
 
@@ -24,7 +24,7 @@ sudo mkdir -p $STATE_DIR
 # =======================================================================================
 # Save current stage that was done, so never return to it
 save_stage() {
-    echo "$1" | sudo tee "$STATE_FILE" > /dev/null
+    echo "$1" | tee "$STATE_FILE" > /dev/null
 }
 
 # Load current stage
@@ -39,18 +39,18 @@ load_stage() {
 # Clean up everything except logs and file hashes
 clean() {
     print_info "Resetting setup state..."
-    sudo rm -rf $STATE_FILE
-    sudo rm -rf $STATE_FILE_PODS
+    rm -rf $STATE_FILE
+    rm -rf $STATE_FILE_PODS
     print_success "State reset to 0"
-    sudo podman rm -f -a > /dev/null
+    podman rm -f -a > /dev/null
     print_success "All pods are deleted"
 }
 
 # Same as clean but without prints to shell
 clean_silent() {
-    sudo rm -rf $STATE_FILE
-    sudo rm -rf $STATE_FILE_PODS
-    sudo podman rm -f -a > /dev/null
+    rm -rf $STATE_FILE
+    rm -rf $STATE_FILE_PODS
+    podman rm -f -a > /dev/null
 }
 
 # Ask for running program from root
@@ -106,7 +106,7 @@ fatal_installation_error () {
 # Check crucial files if they were changed after last run
 detect_changes() {
     set +e
-    sudo "$SCRIPT_DIR/check_changes.sh"
+    "$SCRIPT_DIR"/check_changes.sh
     rc=$?
     set -e
 
@@ -126,7 +126,7 @@ detect_changes() {
 
 # Create the interfaces for VLANs 
 run_stage_0 () {
-    if ! sudo "$SCRIPT_DIR/setup_interfaces.sh"; then
+    if ! "$SCRIPT_DIR"/setup_interfaces.sh; then
         print_error "Interface setup exited with error. Aborting configuration"
         exit 1
     fi
@@ -136,7 +136,7 @@ run_stage_0 () {
 
 # Check if desired honeypots IPs are free to use
 run_stage_1 () {
-    if ! sudo "$SCRIPT_DIR/ip_checker.sh"; then
+    if ! "$SCRIPT_DIR"/ip_checker.sh; then
         print_error "IP conflict detected. Please change the honeypot IP. Aborting configuration"
         exit 1
     fi
@@ -148,8 +148,8 @@ run_stage_1 () {
 run_stage_2 () {
     # Grab timestamp to display journalctl command in the end prompt
     timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    sudo "$SCRIPT_DIR/build_services/log_file_create.sh"
-    if ! sudo "$SCRIPT_DIR"/setup_pods.sh $rebuild_base; then
+    "$SCRIPT_DIR"/build_services/log_file_create.sh
+    if ! "$SCRIPT_DIR"/setup_pods.sh $rebuild_base; then
         print_error "Error while configuring pods. Aborting configuration"
         exit 1
     fi
@@ -244,7 +244,7 @@ main() {
     require_root
     parse_args "$@"
     detect_changes
-    sudo "$SCRIPT_DIR/install_requirements.sh"
+    "$SCRIPT_DIR"/install_requirements.sh
     run_stages
 }
 
