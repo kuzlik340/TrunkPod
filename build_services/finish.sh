@@ -3,12 +3,13 @@
 
 set -uo pipefail
 
-ctr=$2
-IMAGE_NAME=$1
+ctr="$2"
+IMAGE_NAME="$1"
 
-source base_functions.sh
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR"/base_functions.sh
 trap rollback ERR
-run_buildah copy "$ctr" configs/supervisord.conf /etc/supervisor/supervisord.conf
+run_buildah copy "$ctr" "$SCRIPT_DIR"/configs/supervisord.conf /etc/supervisor/supervisord.conf
 run_buildah config \
     --cmd '["/usr/bin/supervisord","-c","/etc/supervisor/supervisord.conf"]' \
     "$ctr"

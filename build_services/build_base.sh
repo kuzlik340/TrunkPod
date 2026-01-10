@@ -2,11 +2,10 @@
 
 set -uo pipefail
 
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-cd "$SCRIPT_DIR"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-source base_functions.sh
-source ../global_functions.sh
+source "$SCRIPT_DIR"/base_functions.sh
+source "$SCRIPT_DIR"/../global_functions.sh
 
 trap rollback ERR
 

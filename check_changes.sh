@@ -10,7 +10,10 @@
 # missing.                                       |
 # ================================================
 
-source global_functions.sh
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR"/global_functions.sh
 
 HASH_FILE=/run/honeybridge.d/hashes.txt
 TMP_FILE=$(mktemp)

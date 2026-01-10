@@ -7,7 +7,8 @@
 
 set -euo pipefail
 
-source global_functions.sh
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR"/global_functions.sh
 
 # Array for rollback function
 CREATED_INTERFACES=()

@@ -1,8 +1,10 @@
 # Colors
 
 logfile="honeybridge_build_current.log"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-source ../global_functions.sh
+
+source "$SCRIPT_DIR"/../global_functions.sh
 
 print_logfile_message() {
     print_info "Logs for build will are accessible via symlink: ${BLUE}build_services/$logfile${NC}"

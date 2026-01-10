@@ -6,7 +6,7 @@
 # management, service configuration, and recovery.|
 # =================================================
 
-set -euo pipefail
+set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)" # Change directory to HoneyBridge and save it
 source "$SCRIPT_DIR"/global_functions.sh

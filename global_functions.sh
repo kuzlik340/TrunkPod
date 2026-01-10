@@ -36,8 +36,10 @@ print_stage() {
     local padding=$(( total_width - text_len - 2 ))
     local left_pad=$(( padding / 2 ))
     local right_pad=$(( padding - left_pad ))
-    local left_fill=$(printf "%*s" "$left_pad" "" | tr ' ' '=')
-    local right_fill=$(printf "%*s" "$right_pad" "" | tr ' ' '=')
+    local left_fill
+    local right_fill
+    left_fill=$(printf "%*s" "$left_pad" "" | tr ' ' '=')
+    right_fill=$(printf "%*s" "$right_pad" "" | tr ' ' '=')
     echo -e "${left_fill} ${PURPLE}$*${NC} ${right_fill}"
 }
 

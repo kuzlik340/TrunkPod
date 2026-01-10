@@ -5,16 +5,18 @@
 # that will be used during honeypots deploy.   |
 # ==============================================
 
-source global_functions.sh
+set -Eeuo pipefail
 
-set -euo pipefail
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR"/global_functions.sh
 
 install_package () {
-    if ! dpkg -s $1 &>/dev/null; then
+    if ! dpkg -s "$1" &>/dev/null; then
         installed=1
         print_info "Installing $1"
         echo ""
-        apt install -y $1
+        apt install -y "$1"
     fi
 }
 print_info "Checking tools"

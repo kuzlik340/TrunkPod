@@ -6,17 +6,16 @@
 # and assigning namespaces.                                |
 # ==========================================================
 
-set -euo pipefail
+set -Eeuo pipefail
 
-source global_functions.sh
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR"/global_functions.sh
 
 STATE_FILE_PODS="/run/honeybridge.d/honeybridge_pods_stage"
 # The directory with all services that could be bundled into honeypot
 rebuild_base=$1
 # Length of the honeypots.yaml
 len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
-# Directory in which this script is placed
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
 print_stage "STAGE 2: Pods configuration"
 
@@ -37,12 +36,12 @@ rollback () {
     if [[ $macvlan_moved -eq 0 ]]; then
         if ip link show macvlan_temp &>/dev/null; then
             print_info "Deleting macvlan_temp"
-             ip link delete macvlan_temp
+            ip link delete macvlan_temp
         fi
     fi
     if [[ $container_running -eq 1 ]]; then
         print_info "Deleting pod"
-         podman rm -f "$current_container_name"
+        podman rm -f "$current_container_name"
     fi
     print_info "Setup pods rollback completed"
     save_pods_stage "$current_pos"
@@ -98,7 +97,7 @@ setup_macvlan_for_container () {
 
 start_container () {
     print_info "Starting honeypot $honeypot_name"
-    container_hash=$(./run_honeypot.sh $honeypot_name)
+    container_hash=$("$SCRIPT_DIR"/run_honeypot.sh "$honeypot_name")
     print_success "Container $honeypot_name started: $container_hash"
     current_container_name="$honeypot_name"
     container_running=1 # Safe rollback if error occurs
@@ -139,7 +138,7 @@ start_pos=$(load_pods_stage)
 
 # Build base image if it was changed
 if [[ $rebuild_base -eq 1 ]]; then
-    ./build_services/build_base.sh 
+    "$SCRIPT_DIR"/build_services/build_base.sh 
     cd "$SCRIPT_DIR" 
 fi
 
@@ -151,12 +150,12 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     macvlan_moved=0
     container_running=0
     # ==================== Reading configuration ========================
-    load_honeypot_config $i
+    load_honeypot_config "$i"
     # ===================================================================
     # Deleting old supervisor config since it was overwritten and starting with template 
     prepare_supervisor_configs
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
-    ./build_services/start.sh "$honeypot_name" "${service_names[@]}"
+    "$SCRIPT_DIR"/build_services/start.sh "$honeypot_name" "${service_names[@]}"
     cd "$SCRIPT_DIR"
     # Update already deployed honeypot counter
     current_pos=${i}

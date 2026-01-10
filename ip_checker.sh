@@ -6,7 +6,9 @@
 # will be added                                |
 # ==============================================
 set -euo pipefail
-source global_functions.sh
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR"/global_functions.sh
 
 print_stage "STAGE 1: IP Checker"
 print_info "Checking if desired IPs for honeypots are already in use. This will take some time..."
