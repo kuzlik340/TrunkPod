@@ -8,7 +8,7 @@
 set -euo pipefail
 source global_functions.sh
 
-print_stage "STAGE 2: IP Checker"
+print_stage "STAGE 1: IP Checker"
 print_info "Checking if desired IPs for honeypots are already in use. This will take some time..."
 rc=0
 yq_safe len '.honeypots | length' "$HONEYPOT_CONF"

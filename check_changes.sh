@@ -5,18 +5,21 @@
 # If any file has been modified, configuration   |
 # will be re-run from scratch.                   |
 # ================================================
-
+# Returns 2 if rebuild base should be done, 1 if |
+# cold boot, 3 if config changed, 50 if files are|
+# missing.                                       |
+# ================================================
 
 source global_functions.sh
 
 HASH_FILE=/run/honeybridge.d/hashes.txt
 TMP_FILE=$(mktemp)
 
-changed=0
-rebuild_base=0
+
+exit_code=0
 
 FILES=(
-    "build_services/build_base.sh"
+    "build_services/build_base.sh" # Always keep at the start of list
     "configs/network.yaml"
     "configs/honeypots.yaml"
 )
@@ -26,7 +29,7 @@ if [[ ! -f "$HASH_FILE" ]]; then
     for file in "${FILES[@]}"; do
         sha1sum "$file" >> "$HASH_FILE"
     done
-    exit 2     # base rebuild on first run
+    exit 1     # cold boot
 fi
 
 while read -r stored_hash stored_path; do
@@ -40,10 +43,10 @@ while read -r stored_hash stored_path; do
 
     if [[ "$stored_hash" != "$current_hash" ]]; then
         print_info "Changed: $stored_path"
-        changed=1
+        exit_code=3
 
         if [[ "$stored_path" == "build_services/build_base.sh" ]]; then
-            rebuild_base=1
+            exit_code=2
         fi
 
         echo "$current_hash  $stored_path" >> "$TMP_FILE"
@@ -54,8 +57,4 @@ while read -r stored_hash stored_path; do
 done < "$HASH_FILE"
 mv "$TMP_FILE" "$HASH_FILE"
 
-# If the base_image.sh was changed
-if [[ $rebuild_base -eq 1 ]]; then
-    exit 2
-fi
-exit $changed
+exit $exit_code

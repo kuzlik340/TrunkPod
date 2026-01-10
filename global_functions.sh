@@ -2,6 +2,10 @@
 HONEYPOT_CONF="configs/honeypots.yaml"
 NETWORK_CONF="configs/network.yaml"
 
+STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe restarts
+STATE_FILE="/run/honeybridge.d/honeybridge_stage"
+STATE_FILE_PODS="/run/honeybridge.d/honeybridge_pods_stage"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'

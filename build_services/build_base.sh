@@ -8,11 +8,11 @@ cd "$SCRIPT_DIR"
 source base_functions.sh
 source ../global_functions.sh
 
-trap rollback ERR 
+trap rollback ERR
 
 print_info "Creating base image" 
 
-print_logfile_message
+print_logfile_message 
 
 ctr=$(buildah from debian:stable-slim)
 
@@ -21,7 +21,7 @@ run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
 #TODO  WHY works only with rc=
 print_info "Running update of base image. This will take some time..." 
 run_buildah run "$ctr" -- bash -c "
-    apt-get update &&
+    apt-get uppdate &&
     apt-get install -y --no-install-recommends \
         bash sudo ca-certificates supervisor \
         python3 python3-pip python3-virtualenv \

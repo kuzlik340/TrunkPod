@@ -20,7 +20,6 @@ run_buildah() {
     fi
 }
 
-
 rollback() {
     print_error "Error occurred while running build${NC}"
     buildah rm $ctr > /dev/null

@@ -10,7 +10,7 @@ set -euo pipefail
 
 source global_functions.sh
 
-STATE_FILE="/run/honeybridge.d/honeybridge_pods_stage"
+STATE_FILE_PODS="/run/honeybridge.d/honeybridge_pods_stage"
 # The directory with all services that could be bundled into honeypot
 rebuild_base=$1
 # Length of the honeypots.yaml
@@ -18,7 +18,7 @@ len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
 # Directory in which this script is placed
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
-print_stage "STAGE 3: Pods configuration"
+print_stage "STAGE 2: Pods configuration"
 
 macvlan_moved=0             # For safe rollback, shows if the macvlan is under hosts control or already in pod
 container_running=0         # For safe rollback, shows if the pod already runs
@@ -28,12 +28,12 @@ current_pos=0               # For state managment, shows what was the index of h
 # =================================== FUNCTIONS =========================================
 
 save_pods_stage() {
-    echo "$1" | sudo tee "$STATE_FILE" >/dev/null
+    echo "$1" | sudo tee "$STATE_FILE_PODS" >/dev/null
 }
 
 load_pods_stage() {
-    if [[ -f "$STATE_FILE" ]]; then
-        cat "$STATE_FILE"
+    if [[ -f "$STATE_FILE_PODS" ]]; then
+        cat "$STATE_FILE_PODS"
     else
         echo 0
     fi
@@ -41,11 +41,12 @@ load_pods_stage() {
 
 rollback() {
     print_error "Error occurred while setting up pods"
-    print_info "Rolling back..."
 
     if [[ $macvlan_moved -eq 0 ]]; then
-        print_info "Deleting macvlan_temp"
-        sudo ip link delete macvlan_temp 2>/dev/null
+        if ip link show macvlan_temp &>/dev/null; then
+            print_info "Deleting macvlan_temp"
+            sudo ip link delete macvlan_temp
+        fi
     fi
     if [[ $container_running -eq 1 ]]; then
         print_info "Deleting pod"
@@ -64,12 +65,9 @@ start_pos=$(load_pods_stage)
 
 # Build base image if it was changed
 if [[ $rebuild_base -eq 1 ]]; then
-    sudo bash -c ./build_services/build_base.sh 
+    ./build_services/build_base.sh 
     cd "$SCRIPT_DIR" 
 fi
-
-# Create directory for output logs of all honeypots
-mkdir -p /var/log/honeybridge/
 
 # Enable logging for ngt
 sudo sysctl -w net.netfilter.nf_log_all_netns=1 > /dev/null
@@ -110,8 +108,6 @@ for i in $(seq "${start_pos}" $((len - 1))); do
             print_warning "No supervisor config for service '$name' (${conf_path})"
         fi
     done
-    # Creating directory for output logs (When intruder connected to honeypot)
-    mkdir -p "/var/log/honeybridge/$honeypot_name"
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
     sudo ./build_services/start.sh "$honeypot_name" "${service_names[@]}"
     cd "$SCRIPT_DIR"
@@ -124,7 +120,7 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     print_success "Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 
     print_info "Starting honeypot $honeypot_name"
-    container_hash=$(sudo bash -c "./run_honeypot.sh $honeypot_name")
+    container_hash=$(./run_honeypot.sh $honeypot_name)
     print_success "Container $honeypot_name started: $container_hash"
     current_container_name="$honeypot_name"
     container_running=1 # Safe rollback if error occurs

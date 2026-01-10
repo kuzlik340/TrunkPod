@@ -12,17 +12,17 @@ source global_functions.sh
 # Array for rollback function
 CREATED_INTERFACES=()
 
-print_stage "STAGE 1: Interface configuration"
+print_stage "STAGE 0: Interface configuration"
 print_info "Configuring interfaces based on the $NETWORK_CONF"
 yq_safe len '.vlans | length' "$NETWORK_CONF"
 # Function to handle rollback if error occures during setup
 rollback() {
-    print_error "Error occurred while interface setup.${NC} Rolling back..."
+    print_error "Error occurred while interface configuration"
     for iface in "${CREATED_INTERFACES[@]}"; do
         print_deletion "Deleting $iface"
         sudo ip link delete "$iface" 2>/dev/null || true
     done
-    print_info "Rollback finished"
+    print_info "Interface configuration rollback completed"
     exit 1
 }
 trap rollback ERR
