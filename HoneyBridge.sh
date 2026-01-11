@@ -227,7 +227,7 @@ Options:
   --help                  Show this help message and exit
   --clean                 Remove previous configuration state and delete all deployed honeypots
   --clean-build-logs      Delete all build logs. Honeypot produced logs are still accesible in journalctl
-
+  --force-rebuild-base    Rebuilds the base if it was for a example removed outside of this script
 Behavior:
   If no options are provided, HoneyBridge reads configuration files from the
   'configs/' directory and deploys honeypots according to the configuration.
@@ -235,8 +235,8 @@ Behavior:
 Examples:
   sudo ./HoneyBridge
   sudo ./HoneyBridge --clean
-  sudo ./HoneyBridge --clean-logs
-
+  sudo ./HoneyBridge --clean-build-logs
+  sudo ./Honeybridge --force-rebuild-base
 Notice! The program won't start until run with sudo.
 EOF
 }
@@ -288,9 +288,6 @@ fi
 #TODO everytime new logs or somehow save old directory?                                                                                 DONE
 #TODO Log in one file, also with tcpdump or smth like that                                                                              DONE
 #TODO log into one file from nftablesODO create in logging commit transaction so won't be "HonHoneypot2 Null_scaneypot1 SYN scan"       DONE  
-#TODO error handler for yaml
-#TODO error handler not in depth
-#TODO check build_service    
 #TODO Enable yaml conf checker
 
 
@@ -303,35 +300,16 @@ fi
 
 #================================================ 4 STAGE ===============================================
 #TODO CAPABLITIES on the podman 
+#TODO map user and run without sudo
 #TODO secure web page
-#TODO: map user and run without sudo
 #TODO some pentests (Metasploit and others), lateral movement check
 #TODO Mitre ATT&CK 
 #TODO Same services on different ports on one honeypot
 
 #================================================ Features ===============================================
-#TODO MAC generator based on vendor
+#TODO MAC generator based on vendor (Probably will not be done)
 #TODO change IP while running
-#TODO make IP checker check for same IPs in the yaml and same ports
-#TODO multi-core to optimize time
-#TODO sudo only where it is has to be
-#TODO ssh twisted python 
-#TODO services:
-    #   - name: login_server 
-    #     port: 8000
-    #   - name: login_server 
-    #     port: 8300
-    #   - name: ssh
-    #     port: 22
-
-
-#TODO FIX
-# =================================== STAGE 3: Pods configuration ======================================
-# [*] Creating macvlan interface: macvlan_temp for honeypot1
-# [+] Created macvlan_temp with honeypot MAC DA:FD:BE:EF:00:01
-# [*] Starting honeypot honeypot1
-# [+] Container honeypot1 started: b921ef65fd2cc62201846def1b146a296f0c359e495d49f01e1a8da6950f5aaf
-# [*] Moving macvlan_temp into honeypot1 namespace
-# [*] Configuring pod networking
-# ./setup_pods.sh: line 96: service_script: unbound variable
-# [!] Error while configuring pods. Aborting configuration
+#TODO multi-core to optimize time (TOUGH)
+#TODO sudo only where it is has to be (TOUGH)
+#TODO ssh twisted python                                                                                                                DONE
+#TODO services same services on diff ports                                                                                              DONE

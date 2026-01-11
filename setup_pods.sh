@@ -40,7 +40,7 @@ rollback () {
     fi
     if [[ $container_running -eq 1 ]]; then
         print_info "Deleting pod"
-        podman rm -f "$current_container_name"
+        podman rm -f "$current_container_name" > /dev/null
     fi
     print_info "Setup pods rollback completed"
     save_pods_stage "$current_pos"
@@ -138,7 +138,6 @@ start_pos=$(load_pods_stage)
 # Build base image if it was changed
 if [[ $rebuild_base -eq 1 ]]; then
     "$PROJECT_ROOT"/build_services/build_base.sh 
-    cd "$PROJECT_ROOT" 
 fi
 
 # Enable logging for ngt
@@ -155,7 +154,6 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     prepare_supervisor_configs
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
     "$PROJECT_ROOT"/build_services/start.sh "$honeypot_name" "${service_names[@]}"
-    cd "$PROJECT_ROOT"
     # Update already deployed honeypot counter
     current_pos=${i}
     setup_macvlan_for_container

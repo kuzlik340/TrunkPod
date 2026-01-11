@@ -21,8 +21,8 @@ if len(sys.argv) >= 3:
     name = sys.argv[2]
 AUTH_DELAY_SECONDS = 4   # artificial delay per attempt
 SSH_PORT = port         
-HOST_KEY_FILE = "ssh_host_key"
-
+HOST_KEY_FILE = "/app/ssh_host_key"
+os.makedirs("/app", exist_ok=True)
 # =========================
 # Generate host key once
 # =========================
@@ -97,7 +97,7 @@ class LoggingSSHTransport(SSHServerTransport):
         peer = self.transport.getPeer()
 
         print(
-            f"[HoneyBridge][{name}][FAKE_SSH] SSH connection started from "
+            f"[HoneyBridge][{name}][FAKE_SSH] SSH connection try from "
             f"{peer.host}:{peer.port}"
         )
 
@@ -128,6 +128,6 @@ class FakeSSHFactory(factory.SSHFactory):
 # =========================
 # Start Server
 # =========================
-print(f"[+] Fake SSH server listening on port {SSH_PORT}")
+print(f"[HoneyBridge][{name}][FAKE_SSH] Service running on port {SSH_PORT}, just an info message")
 reactor.listenTCP(SSH_PORT, FakeSSHFactory())
 reactor.run()

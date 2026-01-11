@@ -68,8 +68,7 @@ def run():
         port = int(sys.argv[1])
         name = sys.argv[2]
     server = HTTPServer(("0.0.0.0", port), Handler)
-    msg = f"[HoneyBridge][{name}][LOGIN_PAGE] Honeypot running, just an info message"
-    print(msg)
+    print(f"[HoneyBridge][{name}][LOGIN_PAGE] Service running on port {port}, just an info message")
     server.serve_forever()
 
 if __name__ == "__main__":
