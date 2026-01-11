@@ -12,8 +12,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR"/global_functions.sh
+source "$PROJECT_ROOT"/global_functions.sh
 
 HASH_FILE=/run/honeybridge.d/hashes.txt
 TMP_FILE=$(mktemp)
@@ -30,7 +29,7 @@ FILES=(
 # First run: create the hash file and insert hashes
 if [[ ! -f "$HASH_FILE" ]]; then
     for file in "${FILES[@]}"; do
-        sha1sum "$SCRIPT_DIR/$file" >> "$HASH_FILE"
+        sha1sum "$PROJECT_ROOT/$file" >> "$HASH_FILE"
     done
     exit 1     # cold boot
 fi

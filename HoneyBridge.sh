@@ -8,10 +8,11 @@
 
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)" # Change directory to HoneyBridge and save it
-source "$SCRIPT_DIR"/global_functions.sh
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR"/set_project_root.sh
+source "$PROJECT_ROOT"/global_functions.sh
 
-LOGO_DIR="$SCRIPT_DIR"/assets/logos # Directory with the logos of the HoneyBridge project   
+LOGO_DIR="$PROJECT_ROOT"/assets/logos # Directory with the logos of the HoneyBridge project   
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
 rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
 
@@ -39,9 +40,9 @@ load_stage() {
 # Clean up everything except logs and file hashes
 clean() {
     print_info "Resetting setup state..."
-    rm -f $STATE_FILE
-    rm -f $STATE_FILE_PODS
-    rm -f $SCRIPT_DIR/build_services/honeybridge_build_current.log
+    rm -f "$STATE_FILE"
+    rm -f "$STATE_FILE_PODS"
+    rm -f "$PROJECT_ROOT"/build_services/honeybridge_build_current.log
     print_success "State reset to 0"
     podman rm -f -a > /dev/null
     print_success "All pods are deleted"
@@ -49,9 +50,9 @@ clean() {
 
 # Same as clean but without prints to shell
 clean_silent() {
-    rm -f $STATE_FILE
-    rm -f $STATE_FILE_PODS
-    rm -f $SCRIPT_DIR/build_services/honeybridge_build_current.log
+    rm -f "$STATE_FILE"
+    rm -f "$STATE_FILE_PODS"
+    rm -f "$PROJECT_ROOT"/build_services/honeybridge_build_current.log
     podman rm -f -a > /dev/null
 }
 
@@ -108,7 +109,7 @@ fatal_installation_error () {
 # Check crucial files if they were changed after last run
 detect_changes() {
     set +e
-    "$SCRIPT_DIR"/check_changes.sh
+    "$PROJECT_ROOT"/check_changes.sh
     rc=$?
     set -e
 
@@ -128,7 +129,7 @@ detect_changes() {
 
 # Create the interfaces for VLANs 
 run_stage_0 () {
-    if ! "$SCRIPT_DIR"/setup_interfaces.sh; then
+    if ! "$PROJECT_ROOT"/setup_interfaces.sh; then
         print_error "Interface setup exited with error. Aborting configuration"
         exit 1
     fi
@@ -138,7 +139,7 @@ run_stage_0 () {
 
 # Check if desired honeypots IPs are free to use
 run_stage_1 () {
-    if ! "$SCRIPT_DIR"/ip_checker.sh; then
+    if ! "$PROJECT_ROOT"/ip_checker.sh; then
         print_error "IP conflict detected. Please change the honeypot IP. Aborting configuration"
         exit 1
     fi
@@ -150,8 +151,8 @@ run_stage_1 () {
 run_stage_2 () {
     # Grab timestamp to display journalctl command in the end prompt
     timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    "$SCRIPT_DIR"/build_services/log_file_create.sh
-    if ! "$SCRIPT_DIR"/setup_pods.sh $rebuild_base; then
+    "$PROJECT_ROOT"/build_services/log_file_create.sh
+    if ! "$PROJECT_ROOT"/setup_pods.sh $rebuild_base; then
         print_error "Error while configuring pods. Aborting configuration"
         exit 1
     fi
@@ -246,7 +247,7 @@ main() {
     require_root
     parse_args "$@"
     detect_changes
-    "$SCRIPT_DIR"/install_requirements.sh
+    "$PROJECT_ROOT"/install_requirements.sh
     run_stages
 }
 
@@ -255,7 +256,7 @@ main "$@"
 # Show some random quote at the end
 if [[ $finish -eq 1 ]]; then
     echo ""
-    random_quote=$(shuf -n 1 assets/quotes.txt)
+    random_quote=$(shuf -n 1 "$PROJECT_ROOT"/assets/quotes.txt)
     echo -e "The configuration is done. $random_quote :)"
     echo -e "Logs of honeypots themselves could be seen by running ${BLUE}sudo journalctl -f --since '$timestamp' | grep --line-buffered '\[HoneyBridge\]'${NC}"
 fi

@@ -8,8 +8,7 @@
 
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR"/global_functions.sh
+source "$PROJECT_ROOT"/global_functions.sh
 
 STATE_FILE_PODS="/run/honeybridge.d/honeybridge_pods_stage"
 # The directory with all services that could be bundled into honeypot
@@ -72,10 +71,10 @@ prepare_supervisor_configs () {
         local port="${service_ports[$idx]}"
 
         # Copy template supervisor config
-        cp "$SCRIPT_DIR"/build_services/configs/supervisor_templates/"${name}".conf \
-        "$SCRIPT_DIR"/build_services/configs/supervisor/"${name}${port}".conf
+        cp "$PROJECT_ROOT"/build_services/configs/supervisor_templates/"${name}".conf \
+        "$PROJECT_ROOT"/build_services/configs/supervisor/"${name}${port}".conf
 
-        conf_path="$SCRIPT_DIR/build_services/configs/supervisor/"${name}${port}".conf"
+        conf_path="$PROJECT_ROOT/build_services/configs/supervisor/"${name}${port}".conf"
 
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
@@ -97,7 +96,7 @@ setup_macvlan_for_container () {
 
 start_container () {
     print_info "Starting honeypot $honeypot_name"
-    container_hash=$("$SCRIPT_DIR"/run_honeypot.sh "$honeypot_name")
+    container_hash=$("$PROJECT_ROOT"/run_honeypot.sh "$honeypot_name")
     print_success "Container $honeypot_name started: $container_hash"
     current_container_name="$honeypot_name"
     container_running=1 # Safe rollback if error occurs
@@ -138,8 +137,8 @@ start_pos=$(load_pods_stage)
 
 # Build base image if it was changed
 if [[ $rebuild_base -eq 1 ]]; then
-    "$SCRIPT_DIR"/build_services/build_base.sh 
-    cd "$SCRIPT_DIR" 
+    "$PROJECT_ROOT"/build_services/build_base.sh 
+    cd "$PROJECT_ROOT" 
 fi
 
 # Enable logging for ngt
@@ -155,8 +154,8 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     # Deleting old supervisor config since it was overwritten and starting with template 
     prepare_supervisor_configs
     # Passing all services so the chain of build_"services".sh scripts will build the desired image
-    "$SCRIPT_DIR"/build_services/start.sh "$honeypot_name" "${service_names[@]}"
-    cd "$SCRIPT_DIR"
+    "$PROJECT_ROOT"/build_services/start.sh "$honeypot_name" "${service_names[@]}"
+    cd "$PROJECT_ROOT"
     # Update already deployed honeypot counter
     current_pos=${i}
     setup_macvlan_for_container

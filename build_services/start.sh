@@ -1,11 +1,11 @@
 #!/bin/bash
 set -uo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-echo $SCRIPT_DIR
-source "$SCRIPT_DIR"/base_functions.sh
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-trap rollback ERR
+IMAGE_NAME="$1"
+ctr="$2"
+
+source "$PROJECT_ROOT"/build_services/base_functions.sh
+trap rollback ERR 
 
 IMAGE_NAME=$1
 
@@ -17,15 +17,14 @@ run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
 
 for service in "${services[@]}"; do
     print_info "Copying Supervisor configs"
-    echo $SCRIPT_DIR
-    run_buildah copy "$ctr" "$SCRIPT_DIR"/configs/supervisor/"$service*".conf /etc/supervisor/conf.d/
+    run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/configs/supervisor/"$service*".conf /etc/supervisor/conf.d/
     print_info "Building service: $service"
     trap - ERR
-    "$SCRIPT_DIR"/build_"$service".sh "$IMAGE_NAME" "$ctr"
+    "$PROJECT_ROOT"/build_services/build_"$service".sh "$IMAGE_NAME" "$ctr"
     trap rollback ERR
 done
 rm -rf configs/supervisor
-"$SCRIPT_DIR"/finish.sh "$IMAGE_NAME" "$ctr"
+"$PROJECT_ROOT"/build_services/finish.sh "$IMAGE_NAME" "$ctr"
 
 
 

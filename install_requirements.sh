@@ -7,9 +7,7 @@
 
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-source "$SCRIPT_DIR"/global_functions.sh
+source "$PROJECT_ROOT"/global_functions.sh
 
 install_package () {
     if ! dpkg -s "$1" &>/dev/null; then

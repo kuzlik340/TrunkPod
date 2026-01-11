@@ -1,11 +1,10 @@
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-logfile="$SCRIPT_DIR/honeybridge_build_current.log"
+logfile="$PROJECT_ROOT"/build_services/honeybridge_build_current.log
 
-source "$SCRIPT_DIR"/../global_functions.sh
+source "$PROJECT_ROOT"/global_functions.sh
 
 print_logfile_message() {
-    print_info "Logs for build will are accessible via symlink: ${BLUE}build_services/$logfile${NC}"
+    print_info "Logs for build will are accessible via symlink: ${BLUE}$logfile${NC}"
 }
 
 # Buildah logger: logs only buildah output, errors will be seen in stdout
