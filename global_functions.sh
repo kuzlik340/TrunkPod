@@ -1,6 +1,8 @@
 #!/bin/bash
-HONEYPOT_CONF="configs/honeypots.yaml"
-NETWORK_CONF="configs/network.yaml"
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+HONEYPOT_CONF="$SCRIPT_DIR/configs/honeypots.yaml"
+NETWORK_CONF="$SCRIPT_DIR/configs/network.yaml"
 
 STATE_DIR="/run/honeybridge.d"  # Stores HoneyBridge stage progress for safe restarts
 STATE_FILE="/run/honeybridge.d/honeybridge_stage"

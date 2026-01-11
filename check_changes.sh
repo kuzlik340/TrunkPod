@@ -30,7 +30,7 @@ FILES=(
 # First run: create the hash file and insert hashes
 if [[ ! -f "$HASH_FILE" ]]; then
     for file in "${FILES[@]}"; do
-        sha1sum "$file" >> "$HASH_FILE"
+        sha1sum "$SCRIPT_DIR/$file" >> "$HASH_FILE"
     done
     exit 1     # cold boot
 fi

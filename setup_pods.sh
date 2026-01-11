@@ -72,10 +72,10 @@ prepare_supervisor_configs () {
         local port="${service_ports[$idx]}"
 
         # Copy template supervisor config
-        cp build_services/configs/supervisor_templates/"${name}".conf \
-        build_services/configs/supervisor/"${name}${port}".conf
+        cp "$SCRIPT_DIR"/build_services/configs/supervisor_templates/"${name}".conf \
+        "$SCRIPT_DIR"/build_services/configs/supervisor/"${name}${port}".conf
 
-        conf_path="build_services/configs/supervisor/"${name}${port}".conf"
+        conf_path="$SCRIPT_DIR/build_services/configs/supervisor/"${name}${port}".conf"
 
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port

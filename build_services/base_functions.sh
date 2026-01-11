@@ -1,8 +1,6 @@
-# Colors
 
-logfile="honeybridge_build_current.log"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
+logfile="$SCRIPT_DIR/honeybridge_build_current.log"
 
 source "$SCRIPT_DIR"/../global_functions.sh
 

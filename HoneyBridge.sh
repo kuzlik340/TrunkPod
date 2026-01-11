@@ -39,8 +39,9 @@ load_stage() {
 # Clean up everything except logs and file hashes
 clean() {
     print_info "Resetting setup state..."
-    rm -rf $STATE_FILE
-    rm -rf $STATE_FILE_PODS
+    rm -f $STATE_FILE
+    rm -f $STATE_FILE_PODS
+    rm -f $SCRIPT_DIR/build_services/honeybridge_build_current.log
     print_success "State reset to 0"
     podman rm -f -a > /dev/null
     print_success "All pods are deleted"
@@ -48,8 +49,9 @@ clean() {
 
 # Same as clean but without prints to shell
 clean_silent() {
-    rm -rf $STATE_FILE
-    rm -rf $STATE_FILE_PODS
+    rm -f $STATE_FILE
+    rm -f $STATE_FILE_PODS
+    rm -f $SCRIPT_DIR/build_services/honeybridge_build_current.log
     podman rm -f -a > /dev/null
 }
 
