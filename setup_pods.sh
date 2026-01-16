@@ -118,6 +118,7 @@ configure_honeypot_network() {
     IFS=/ read -r _ mask <<< "$network_range"
     nsenter -t "$pid" -n ip addr add "${honeypot_ip}"/"${mask}" dev eth0
     nsenter -t "$pid" -n ip link set eth0 up
+    nsenter -t "$pid" -n arping -A -c 3 -I eth0 "$honeypot_ip" >> /dev/null || true
 }
 
 enable_nft_logging () {
