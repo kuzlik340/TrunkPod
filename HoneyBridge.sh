@@ -121,6 +121,13 @@ detect_changes() {
         *) reset_and_rebuild ;;
     esac
 }
+
+check_config() {
+    if ! python3 "$PROJECT_ROOT"/honeypots_config_checker.py; then
+        print_error "Yaml config error detected. Aborting configuration"
+        exit 1
+    fi
+}
 # =======================================================================================
 
 
@@ -248,6 +255,7 @@ main() {
     parse_args "$@"
     detect_changes
     "$PROJECT_ROOT"/install_requirements.sh
+    check_config
     run_stages
 }
 

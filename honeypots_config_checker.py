@@ -1,29 +1,57 @@
 import yaml
+import sys
 from collections import defaultdict
+from yaml.error import YAMLError
 
-with open("configs/honeypots.yaml", "r") as f:
-    config = yaml.safe_load(f)
+ERROR = "[\033[31m!\033[0m] \033[31mERROR:\033[0m "
+INFO  = "[\033[35m*\033[0m] \033[35mINFO:\033[0m "
     
 ips = defaultdict(list)
 macs = defaultdict(list)
 
 errors = False
 
+def load_yaml(path):
+    try:
+        with open(path, "r") as f:
+            data = yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"{ERROR}Config file '{path}' not found")
+        sys.exit(1)
+    except PermissionError:
+        print(f"{ERROR}No permission to read '{path}'")
+        sys.exit(1)
+    except YAMLError as e:
+        print(f"{ERROR}YAML syntax error in '{path}':")
+        print(f"    {e}")
+        sys.exit(1)
+
+    if data is None:
+        print(f"{ERROR}YAML file '{path}' is empty")
+        sys.exit(1)
+
+    if not isinstance(data, dict):
+        print(f"{ERROR}Top-level YAML structure must be a mapping (dict)")
+        sys.exit(1)
+
+    return data
+
+config = load_yaml("configs/honeypots.yaml")
 # -----------------------------
 # IP and MAC uniqueness
 # -----------------------------
-for h in config["honeypots"]:
-    ips[h["ip"]].append(h["name"])
-    macs[h["mac"]].append(h["name"])
+for honeypot in config["honeypots"]:
+    ips[honeypot["ip"]].append(honeypot["name"])
+    macs[honeypot["mac"]].append(honeypot["name"])
 
 for ip, names in ips.items():
     if len(names) > 1:
-        print(f"Duplicate IP address {ip} used by honeypots: {names}")
+        print(f"{ERROR}Duplicate IP address {ip} used by honeypots: {names}")
         errors = True
 
 for mac, names in macs.items():
     if len(names) > 1:
-        print(f"Duplicate MAC address {mac} used by honeypots: {names}")
+        print(f"{ERROR}Duplicate MAC address {mac} used by honeypots: {names}")
         errors = True
 
 # -----------------------------
@@ -32,13 +60,12 @@ for mac, names in macs.items():
 for h in config["honeypots"]:
     port_map = defaultdict(list)
 
-    for svc in h.get("services", []):
-        port_map[svc["port"]].append(svc["name"])
+    for service in h.get("services", []):
+        port_map[service["port"]].append(service["name"])
 
     for port, services in port_map.items():
         if len(services) > 1:
-            print(
-                f"Duplicate port {port} in honeypot '{h['name']}': "
+            print(f"{ERROR}Duplicate port {port} in honeypot '{h['name']}': "
                 f"used by services {services}"
             )
             errors = True
@@ -47,7 +74,7 @@ for h in config["honeypots"]:
 # Final result
 # -----------------------------
 if errors:
-    print("\nConfiguration validation FAILED.")
+    print(f"{ERROR}Configuration validation FAILED.")
     exit(1)
 else:
-    print("Configuration validation OK.")
+    print(f"{INFO}config/honeypots.yaml validation OK.")
