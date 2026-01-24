@@ -1,6 +1,8 @@
 #!/bin/bash
 
 podman run -d --name "$1" \
+  --replace \
+  --log-driver=k8s-file \
   --hostname debian \
   --security-opt no-new-privileges \
   --network none \

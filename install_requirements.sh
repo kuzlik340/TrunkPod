@@ -14,7 +14,7 @@ install_package () {
         installed=1
         print_info "Installing $1"
         echo ""
-        apt install -y "$1"
+        apt install -y "$1" > /dev/null 2>&1
     fi
 }
 print_info "Checking tools"
@@ -25,6 +25,7 @@ install_package podman
 install_package arping
 install_package yq
 install_package python3
+install_package suricata
 
 if [ "$installed" -eq 1 ]; then
     print_success "Tools are installed"

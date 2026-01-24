@@ -93,6 +93,12 @@ reset_and_rebuild () {
     save_stage 0
 }
 
+reset () {
+    print_info "Configs were changed. Rerunning from stage 0..."
+    clean_silent
+    save_stage 0
+}
+
 # Set variable to rebuild base image and drop stage if we already had done deploy
 mark_base_for_rebuild () {
     print_info "Base image changed. Base image will be rebuilt."
@@ -102,7 +108,7 @@ mark_base_for_rebuild () {
 
 # If there are missing files
 fatal_installation_error () {
-    print_error "Probably your installation is corrupted. Please reinstall HoneyBridge."
+    print_error "Probably your installation is corrupted or there are no files in ${BLUE}configs/${NC}. Please reinstall HoneyBridge."
     exit 1
 }
 
@@ -115,9 +121,10 @@ detect_changes() {
 
     case "$rc" in
         0) return ;;
-        1) reset_and_rebuild ;;
-        2) mark_base_for_rebuild ;;
-        50) fatal_installation_error ;;
+        1) reset_and_rebuild ;;             # Case if the tool is running on the new machine, or if run was after reboot
+        2) mark_base_for_rebuild ;;         # If the build_base was changed
+        3) reset ;;                         # Something in configs/ was changed. Rerun from 0
+        50) fatal_installation_error ;;     # Files are missing or configs folder is empty
         *) reset_and_rebuild ;;
     esac
 }
@@ -195,6 +202,11 @@ run_stages() {
     done
 }
 
+
+run_logger () {
+    logger_hash=$("$PROJECT_ROOT/run_logger.sh")
+    print_info "Logger container with hash ${BLUE}$logger_hash${NC} started. Logs could be found in ${BLUE}/var/log/all-containers.log${NC}"
+}
 # =======================================================================================
 
 # Function to parse passed arguments
@@ -225,8 +237,6 @@ show_banner () {
 
 show_help() {
     cat <<'EOF'
-HoneyBridge — Honeypot Deployment Framework
-
 Usage:
   sudo ./HoneyBridge [OPTIONS]
 
@@ -234,7 +244,7 @@ Options:
   --help                  Show this help message and exit
   --clean                 Remove previous configuration state and delete all deployed honeypots
   --clean-build-logs      Delete all build logs. Honeypot produced logs are still accesible in journalctl
-  --force-rebuild-base    Rebuilds the base if it was for a example removed outside of this script
+  --force-rebuild-base    Rebuilds the base image forcefully
 Behavior:
   If no options are provided, HoneyBridge reads configuration files from the
   'configs/' directory and deploys honeypots according to the configuration.
@@ -253,10 +263,11 @@ main() {
     show_banner
     require_root
     parse_args "$@"
-    detect_changes
     "$PROJECT_ROOT"/install_requirements.sh
+    detect_changes
     check_config
     run_stages
+    run_logger
 }
 
 main "$@"

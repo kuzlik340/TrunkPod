@@ -12,7 +12,15 @@ IMAGE_NAME=$1
 services=("${@:2}")
 print_logfile_message
 print_info "Starting build for $IMAGE_NAME"
-ctr=$(buildah from localhost/honeypot-base 2>/dev/null)
+
+if buildah inspect localhost/honeypot-base >/dev/null 2>&1; then
+    ctr=$(buildah from localhost/honeypot-base 2>/dev/null)
+else
+    print_error "No base image was found. Please rerun HoneyBridge with ${BLUE}--force-rebuild-base${NC} option or run ${BLUE}--clean${NC} and then run without any options."  
+    exit 1  
+fi
+
+
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
 
 for service in "${services[@]}"; do
