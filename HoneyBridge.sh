@@ -216,6 +216,7 @@ parse_args() {
         --help) show_help; exit 0 ;;
         --clean) clean; exit 0 ;;
         --clean-build-logs) clean_build_logs; exit 0 ;;
+        --clean-honeypot-logs) rm /var/log/all-containers.log && print_info "Honeypot logs cleaned"; exit 0 ;;
         --force-rebuild-base)
             rebuild_base=1
             downgrade_stage_if_needed
@@ -244,6 +245,7 @@ Options:
   --help                  Show this help message and exit
   --clean                 Remove previous configuration state and delete all deployed honeypots
   --clean-build-logs      Delete all build logs. Honeypot produced logs are still accesible in journalctl
+  --clean-honeypot-logs   Delete all honeypot produced logs
   --force-rebuild-base    Rebuilds the base image forcefully
 Behavior:
   If no options are provided, HoneyBridge reads configuration files from the
@@ -277,7 +279,7 @@ if [[ $finish -eq 1 ]]; then
     echo ""
     random_quote=$(shuf -n 1 "$PROJECT_ROOT"/assets/quotes.txt)
     echo -e "The configuration is done. $random_quote :)"
-    echo -e "Logs of honeypots themselves could be seen by running ${BLUE}sudo journalctl -f --since '$timestamp' | grep --line-buffered '\[HoneyBridge\]'${NC}"
+    echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/all-containers.log${NC}"
 fi
 
 #================================================ 1 STAGE ===============================================

@@ -120,17 +120,6 @@ configure_honeypot_network() {
     nsenter -t "$pid" -n ip link set eth0 up
     nsenter -t "$pid" -n arping -A -c 3 -I eth0 "$honeypot_ip" >> /dev/null || true
 }
-
-enable_nft_logging () {
-    nsenter -t "$pid" -n nft add table inet filter
-    nsenter -t "$pid" -n nft add chain inet filter input '{ type filter hook input priority 0; policy accept; }'
-    nsenter -t "$pid" -n nft add rule inet filter input \
-        iifname "eth0" tcp flags syn counter
-    nsenter -t "$pid" -n nft add rule inet filter input \
-        iifname "eth0" tcp flags syn limit rate 3/second burst 5 packets log prefix \"[HoneyBridge][${honeypot_name}] TCP_SYN_SCAN \" level warn
-    nsenter -t "$pid" -n nft add rule inet filter input \
-        iifname "eth0" tcp flags == 0 limit rate 3/second burst 5 packets log prefix \"[HoneyBridge][${honeypot_name}] TCP_NULL_SCAN \" level warn
-}
 # =======================================================================================
 
 # Load last stage
@@ -160,7 +149,6 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     setup_macvlan_for_container
     start_container
     configure_honeypot_network
-    enable_nft_logging
   
     # Output info about the running honeypot
     print_success "Honeypot $honeypot_name ${GREEN}ready${NC}"
