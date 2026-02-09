@@ -120,6 +120,11 @@ configure_honeypot_network() {
     nsenter -t "$pid" -n ip link set eth0 up
     nsenter -t "$pid" -n arping -A -c 3 -I eth0 "$honeypot_ip" >> /dev/null || true
 }
+
+run_logger () {
+    logger_hash=$("$PROJECT_ROOT/run_logger.sh")
+    print_info "Logger container with hash ${BLUE}$logger_hash${NC} started. Logs could be found in ${BLUE}/var/log/all-containers.log${NC}"
+}
 # =======================================================================================
 
 # Load last stage
@@ -159,3 +164,5 @@ for i in $(seq "${start_pos}" $((len - 1))); do
     echo -e "${NC}"
     echo ""
 done
+
+run_logger

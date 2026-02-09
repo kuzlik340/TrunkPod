@@ -16,8 +16,6 @@ LOGO_DIR="$PROJECT_ROOT"/assets/logos # Directory with the logos of the HoneyBri
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
 rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
 
-# Create dir for saving stage
-mkdir -p $STATE_DIR
 
 # =================================== FUNCTIONS =========================================
 
@@ -141,6 +139,10 @@ check_config() {
 # STAGE MANAGING
 # =======================================================================================
 
+# Create dir for saving stage
+make_state_dir () {
+    mkdir -p $STATE_DIR
+}
 # Create the interfaces for VLANs 
 run_stage_0 () {
     if ! "$PROJECT_ROOT"/setup_interfaces.sh; then
@@ -202,11 +204,6 @@ run_stages() {
     done
 }
 
-
-run_logger () {
-    logger_hash=$("$PROJECT_ROOT/run_logger.sh")
-    print_info "Logger container with hash ${BLUE}$logger_hash${NC} started. Logs could be found in ${BLUE}/var/log/all-containers.log${NC}"
-}
 # =======================================================================================
 
 # Function to parse passed arguments
@@ -234,6 +231,16 @@ show_banner () {
     echo -e "\n"
     echo "HoneyBridge — Honeypot Management Toolkit"
     echo ""
+}
+
+# Show some random quote at the end
+show_quote () {
+    if [[ $finish -eq 1 ]]; then
+        echo ""
+        random_quote=$(shuf -n 1 "$PROJECT_ROOT"/assets/quotes.txt)
+        echo -e "The configuration is done. $random_quote :)"
+        echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/all-containers.log${NC}"
+    fi
 }
 
 show_help() {
@@ -264,23 +271,17 @@ EOF
 main() {
     show_banner
     require_root
+    make_state_dir
     parse_args "$@"
     "$PROJECT_ROOT"/install_requirements.sh
     detect_changes
     check_config
     run_stages
-    run_logger
+    show_quote
 }
 
 main "$@"
 
-# Show some random quote at the end
-if [[ $finish -eq 1 ]]; then
-    echo ""
-    random_quote=$(shuf -n 1 "$PROJECT_ROOT"/assets/quotes.txt)
-    echo -e "The configuration is done. $random_quote :)"
-    echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/all-containers.log${NC}"
-fi
 
 #================================================ 1 STAGE ===============================================
 #TODO make the clean flags do what they are supposed to do not megaclean                                                                DONE                                                                                           

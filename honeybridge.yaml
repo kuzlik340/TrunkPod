@@ -1,0 +1,74 @@
+%YAML 1.1
+---
+# =========================
+# FLOW BEHAVIOR — AGGRESSIVE
+# =========================
+flow:
+  memcap: 512mb
+  hash-size: 131072
+
+  timeouts:
+    default:
+      new: 5
+      established: 5
+      closed: 1
+      bypassed: 1
+
+    tcp:
+      new: 5
+      established: 5
+      closed: 1
+
+    udp:
+      new: 3
+      established: 3
+
+    icmp:
+      new: 1
+      established: 1
+
+# =========================
+# DISABLE TRAFFIC SHORTCUTS
+# =========================
+stream:
+  memcap: 256mb
+  checksum-validation: no
+
+# =========================
+# OUTPUTS — EVERYTHING
+# =========================
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /var/log/suricata/eve.json
+      community-id: true
+
+      types:
+        - alert        # scans, malformed traffic, weirdness
+        - flow         # near-real-time flow updates
+        - netflow      # summarized flows
+        - icmp         # ping, ICMP scans
+        - anomaly      # protocol violations
+        - stats        # sensor behavior
+        - dns
+        - http
+        - tls
+
+# =========================
+# NETFLOW EXPORT
+# =========================
+netflow:
+  enabled: yes
+  version: 9
+
+# =========================
+# DETECTION — NO FAST PATHS
+# =========================
+detect:
+  profile: custom
+  custom-values:
+    toclient-groups: 1
+    toserver-groups: 1
+
+
