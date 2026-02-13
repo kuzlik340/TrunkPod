@@ -1,10 +1,9 @@
 import time
 from twisted.conch import avatar, interfaces
-from twisted.conch.ssh import factory, userauth, connection, keys, session
+from twisted.conch.ssh import factory, userauth, connection, keys, session, transport
 from twisted.cred import portal, credentials, error
 from twisted.internet import reactor, defer
 from zope.interface import implementer
-from twisted.conch.ssh.transport import SSHServerTransport
 from twisted.python import log
 from datetime import datetime
 import os
@@ -92,25 +91,52 @@ class RejectAllPasswords:
 # =========================
 # SSH Factory
 # =========================
-class LoggingSSHTransport(SSHServerTransport):
+# class LoggingSSHTransport(SSHServerTransport):
+#     def connectionMade(self):
+#         peer = self.transport.getPeer()
+
+#         print(
+#             f"[HoneyBridge][{name}][FAKE_SSH] SSH connection try from "
+#             f"{peer.host}:{peer.port}"
+#         )
+#         self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
+#         super().connectionMade()
+
+#     def getService(self, service):
+#         if service == b'ssh-userauth':
+#             return LoggingSSHUserAuth
+#         return super().getService(service)
+
+class BannerOnlyTransport(transport.SSHServerTransport):
     def connectionMade(self):
         peer = self.transport.getPeer()
-
         print(
             f"[HoneyBridge][{name}][FAKE_SSH] SSH connection try from "
             f"{peer.host}:{peer.port}"
         )
 
-        super().connectionMade()
+        # Just send an OpenSSH-like banner, no immediate KEX
+        self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
+        self.transport.write(self.ourVersionString + b"\r\n")
 
-    def getService(self, service):
-        if service == b'ssh-userauth':
-            return LoggingSSHUserAuth
-        return super().getService(service)
+        # Disable normal key exchange startup
+        self.currentEncryptions = transport.SSHCiphers(
+            b'none', b'none', b'none', b'none'
+        )
+        self.currentEncryptions.setKeys(b'', b'', b'', b'', b'', b'')
 
+    def dataReceived(self, data):
+        # Log any incoming data
+        print(f"[HoneyBridge][{name}][FAKE_SSH] Manual connection (probably via nc): {data!r}")
+
+        # Close with a proper SSH DISCONNECT message instead of crashing
+        self.sendDisconnect(
+            transport.DISCONNECT_PROTOCOL_ERROR,
+            b"Invalid SSH identification string."
+        )
 
 class FakeSSHFactory(factory.SSHFactory):
-    protocol = LoggingSSHTransport
+    protocol = BannerOnlyTransport
     def __init__(self):
         self.portal = portal.Portal(FakeRealm())
         self.portal.registerChecker(RejectAllPasswords())
