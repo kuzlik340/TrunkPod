@@ -6,9 +6,10 @@ from twisted.internet import reactor, defer
 from zope.interface import implementer
 from twisted.python import log
 from datetime import datetime
+from twisted.conch.ssh.transport import SSHServerTransport
 import os
 import sys
-
+import struct
 
 # =========================
 # Configuration
@@ -91,65 +92,84 @@ class RejectAllPasswords:
 # =========================
 # SSH Factory
 # =========================
-# class LoggingSSHTransport(SSHServerTransport):
-#     def connectionMade(self):
-#         peer = self.transport.getPeer()
-
-#         print(
-#             f"[HoneyBridge][{name}][FAKE_SSH] SSH connection try from "
-#             f"{peer.host}:{peer.port}"
-#         )
-#         self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
-#         super().connectionMade()
-
-#     def getService(self, service):
-#         if service == b'ssh-userauth':
-#             return LoggingSSHUserAuth
-#         return super().getService(service)
-
-class BannerOnlyTransport(transport.SSHServerTransport):
+class LoggingSSHTransport(SSHServerTransport):
     def connectionMade(self):
         peer = self.transport.getPeer()
+
         print(
             f"[HoneyBridge][{name}][FAKE_SSH] SSH connection try from "
             f"{peer.host}:{peer.port}"
         )
-
-        # Just send an OpenSSH-like banner, no immediate KEX
         self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
-        self.transport.write(self.ourVersionString + b"\r\n")
+        super().connectionMade()
 
-        # Disable normal key exchange startup
-        self.currentEncryptions = transport.SSHCiphers(
-            b'none', b'none', b'none', b'none'
-        )
-        self.currentEncryptions.setKeys(b'', b'', b'', b'', b'', b'')
+    def getService(self, service):
+        if service == b'ssh-userauth':
+            return LoggingSSHUserAuth
+        return super().getService(service)
 
-    def dataReceived(self, data):
-        # Log any incoming data
-        print(f"[HoneyBridge][{name}][FAKE_SSH] Manual connection (probably via nc): {data!r}")
+    def ssh_KEXINIT(self, packet):
+        # packet format:
+        # byte      SSH_MSG_KEXINIT (20)
+        # byte[16]  cookie
+        # then 10 name-lists
 
-        # Close with a proper SSH DISCONNECT message instead of crashing
-        self.sendDisconnect(
-            transport.DISCONNECT_PROTOCOL_ERROR,
-            b"Invalid SSH identification string."
-        )
+        payload = packet
+        pos = 16  # skip cookie
+
+        def get_namelist():
+            nonlocal pos
+            length = struct.unpack(">I", payload[pos:pos+4])[0]
+            pos += 4
+            data = payload[pos:pos+length].decode(errors="ignore")
+            pos += length
+            return data
+
+        kex = get_namelist()
+        hostkey = get_namelist()
+        c2s_enc = get_namelist()
+        s2c_enc = get_namelist()
+        c2s_mac = get_namelist()
+        s2c_mac = get_namelist()
+        c2s_comp = get_namelist()
+        s2c_comp = get_namelist()
+        c2s_lang = get_namelist()
+        s2c_lang = get_namelist()
+
+        print(f"[SSH] KEX: {kex}")
+        print(f"[SSH] HostKey: {hostkey}")
+        print(f"[SSH] C2S Enc: {c2s_enc}")
+        print(f"[SSH] S2C Enc: {s2c_enc}")
+        print(f"[SSH] C2S MAC: {c2s_mac}")
+        print(f"[SSH] S2C MAC: {s2c_mac}")
+        print(f"[SSH] Compression: {c2s_comp}")
+
+        # Now let Twisted continue normally
+        return super().ssh_KEXINIT(packet)
+        
 
 class FakeSSHFactory(factory.SSHFactory):
-    protocol = BannerOnlyTransport
+    protocol = LoggingSSHTransport
     def __init__(self):
         self.portal = portal.Portal(FakeRealm())
         self.portal.registerChecker(RejectAllPasswords())
 
     def getPublicKeys(self):
+        key = keys.Key.fromFile(HOST_KEY_FILE)
         return {
-            b"ssh-rsa": keys.Key.fromFile(HOST_KEY_FILE).public()
+            b"ssh-rsa": key.public(),
+            b"rsa-sha2-256": key.public(),
+            b"rsa-sha2-512": key.public(),
         }
 
     def getPrivateKeys(self):
+        key = keys.Key.fromFile(HOST_KEY_FILE)
         return {
-            b"ssh-rsa": keys.Key.fromFile(HOST_KEY_FILE)
+            b"ssh-rsa": key,
+            b"rsa-sha2-256": key,
+            b"rsa-sha2-512": key,
         }
+
 
 # =========================
 # Start Server
