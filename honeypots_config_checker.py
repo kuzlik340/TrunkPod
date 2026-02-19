@@ -1,5 +1,6 @@
 import yaml
 import sys
+import os
 from collections import defaultdict
 from yaml.error import YAMLError
 
@@ -10,6 +11,7 @@ ips = defaultdict(list)
 macs = defaultdict(list)
 
 errors = False
+PROJECT_ROOT = os.environ.get('PROJECT_ROOT')
 
 def load_yaml(path):
     try:
@@ -36,7 +38,8 @@ def load_yaml(path):
 
     return data
 
-config = load_yaml("configs/honeypots.yaml")
+config_path = os.path.join(PROJECT_ROOT, "configs", "honeypots.yaml")
+config = load_yaml(config_path)
 # -----------------------------
 # IP and MAC uniqueness
 # -----------------------------

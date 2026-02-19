@@ -64,8 +64,8 @@ load_honeypot_config () {
 }
 
 prepare_supervisor_configs () {
-    rm -rf build_services/configs/supervisor
-    mkdir -p build_services/configs/supervisor
+    rm -rf "$PROJECT_ROOT"/build_services/configs/supervisor
+    mkdir -p "$PROJECT_ROOT"/build_services/configs/supervisor
     print_info "Configuring $honeypot_name ports"
     for idx in "${!service_names[@]}"; do
         local name="${service_names[$idx]}"

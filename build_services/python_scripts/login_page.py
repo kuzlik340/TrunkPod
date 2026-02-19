@@ -3,7 +3,7 @@ import sys
 import os
 import time
 from datetime import datetime
-
+import logging
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -40,8 +40,7 @@ port = 9000
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         attacker_ip = self.client_address[0]
-        msg = f"[HoneyBridge][{name}][LOGIN_PAGE] GET request from IP: {attacker_ip}"
-        print(msg)
+        logger.info(f"GET request from IP: {attacker_ip}")
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -53,8 +52,7 @@ class Handler(BaseHTTPRequestHandler):
 
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
-        msg = f"[HoneyBridge][{name}][LOGIN_PAGE] crdential captured from {attacker_ip} -> {data}"
-        print(msg)
+        logger.info(f"crdential captured from {attacker_ip} -> {data}")
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -67,8 +65,16 @@ def run():
     if len(sys.argv) >= 3:
         port = int(sys.argv[1])
         name = sys.argv[2]
+    LOG_FILE = f"/log/login_server{port}.log"
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] [HoneyBridge][%(name)s][LOGIN SERVER] %(message)s',
+        handlers=[logging.FileHandler(LOG_FILE, mode='a')]
+    )
+    global logger
+    logger = logging.getLogger(name)
     server = HTTPServer(("0.0.0.0", port), Handler)
-    print(f"[HoneyBridge][{name}][LOGIN_PAGE] Service running on port {port}, just an info message")
+    logger.info(f"Service running on port {port}, just an info message")
     server.serve_forever()
 
 if __name__ == "__main__":

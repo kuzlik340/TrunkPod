@@ -10,6 +10,7 @@ from twisted.conch.ssh.transport import SSHServerTransport
 import os
 import sys
 import struct
+import logging
 
 # =========================
 # Configuration
@@ -19,6 +20,13 @@ name = "honeypot"
 if len(sys.argv) >= 3:
     port = int(sys.argv[1])
     name = sys.argv[2]
+LOG_FILE = f"/log/fake_ssh{port}.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] [HoneyBridge][%(name)s][FAKE_SSH] %(message)s',
+    handlers=[logging.FileHandler(LOG_FILE, mode='a')]
+)
+logger = logging.getLogger(name)
 AUTH_DELAY_SECONDS = 4   # artificial delay per attempt
 SSH_PORT = port         
 HOST_KEY_FILE = "/app/ssh_host_key"
@@ -43,7 +51,7 @@ def generate_host_key():
 try:
     open(HOST_KEY_FILE)
 except FileNotFoundError:
-    print("[*] Generating SSH host key")
+    logger.info("[*] Generating SSH host key")
     generate_host_key()
 
 # =========================
@@ -76,8 +84,7 @@ class RejectAllPasswords:
     def requestAvatarId(self, creds):
         username = creds.username.decode(errors="ignore")
         password = creds.password.decode(errors="ignore")
-        message = (f"[!] Login attempt: {username} : {password}")
-        print(f"[HoneyBridge][{name}][FAKE_SSH] Login attempt: {username} : {password}")
+        logger.info(f"Login attempt: {username} : {password}")
 
 
         d = defer.Deferred()
@@ -96,8 +103,8 @@ class LoggingSSHTransport(SSHServerTransport):
     def connectionMade(self):
         peer = self.transport.getPeer()
 
-        print(
-            f"[HoneyBridge][{name}][FAKE_SSH] SSH connection try from "
+        logger.info(
+            f"SSH connection try from "
             f"{peer.host}:{peer.port}"
         )
         self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
@@ -136,13 +143,13 @@ class LoggingSSHTransport(SSHServerTransport):
         c2s_lang = get_namelist()
         s2c_lang = get_namelist()
 
-        print(f"[SSH] KEX: {kex}")
-        print(f"[SSH] HostKey: {hostkey}")
-        print(f"[SSH] C2S Enc: {c2s_enc}")
-        print(f"[SSH] S2C Enc: {s2c_enc}")
-        print(f"[SSH] C2S MAC: {c2s_mac}")
-        print(f"[SSH] S2C MAC: {s2c_mac}")
-        print(f"[SSH] Compression: {c2s_comp}")
+        logger.info(f"KEX: {kex}")
+        logger.info(f"HostKey: {hostkey}")
+        logger.info(f"C2S Enc: {c2s_enc}")
+        logger.info(f"S2C Enc: {s2c_enc}")
+        logger.info(f"C2S MAC: {c2s_mac}")
+        logger.info(f"S2C MAC: {s2c_mac}")
+        logger.info(f"Compression: {c2s_comp}")
 
         # Now let Twisted continue normally
         return super().ssh_KEXINIT(packet)
@@ -174,6 +181,6 @@ class FakeSSHFactory(factory.SSHFactory):
 # =========================
 # Start Server
 # =========================
-print(f"[HoneyBridge][{name}][FAKE_SSH] Service running on port {SSH_PORT}, just an info message")
+logger.info(f"Service running on port {SSH_PORT}, just an info message")
 reactor.listenTCP(SSH_PORT, FakeSSHFactory())
 reactor.run()
