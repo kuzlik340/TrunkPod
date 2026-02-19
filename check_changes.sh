@@ -47,7 +47,7 @@ while read -r stored_hash stored_path; do
         print_info "Changed: $stored_path"
         exit_code=3
 
-        if [[ "$stored_path" == "build_services/build_base.sh" ]]; then
+        if [[ "$stored_path" == "$PROJECT_ROOT/build_services/build_base.sh" ]]; then
             exit_code=2
         fi
 
