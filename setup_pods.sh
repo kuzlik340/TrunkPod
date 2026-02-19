@@ -57,7 +57,8 @@ load_honeypot_config () {
     yq_safe honeypot_mac_addr -r ".honeypots[$idx].mac" "$HONEYPOT_CONF"
     yq_safe network_range -r \
         ".vlans[] | select(.id == $honeypot_vlan_id) | .range" "$NETWORK_CONF"
-
+    yq_safe gateway_ip -r \
+        ".vlans[] | select(.id == $honeypot_vlan_id) | .gateway" "$NETWORK_CONF"
     mapfile -t service_names < <(yq -r ".honeypots[$idx].services[].name" "$HONEYPOT_CONF")
     mapfile -t service_ports < <(yq -r ".honeypots[$idx].services[].port" "$HONEYPOT_CONF")
 }
@@ -118,6 +119,7 @@ configure_honeypot_network() {
     IFS=/ read -r _ mask <<< "$network_range"
     nsenter -t "$pid" -n ip addr add "${honeypot_ip}"/"${mask}" dev eth0
     nsenter -t "$pid" -n ip link set eth0 up
+    nsenter -t "$pid" -n ip route add default via $gateway_ip dev eth0
     nsenter -t "$pid" -n arping -A -c 3 -I eth0 "$honeypot_ip" >> /dev/null || true
 }
 
