@@ -42,7 +42,8 @@ clean() {
     rm -f "$STATE_FILE_PODS"
     rm -f "$PROJECT_ROOT"/build_services/honeybridge_build_current.log
     print_success "State reset to 0"
-    podman rm -f -a > /dev/null
+    podman ps --format '{{.Pid}}' | xargs kill -9 > /dev/null 2>&1 
+    #podman rm -f -a > /dev/null
     print_success "All pods are deleted"
 }
 
