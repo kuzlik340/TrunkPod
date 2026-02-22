@@ -1,0 +1,15 @@
+filebeat.inputs:
+  - type: filestream
+    id: cowrie-logs
+    enabled: true
+    paths:
+      - "${LOG_PATH}/cowrie.json"
+    prospector.scanner.check_interval: 10s
+    close.on_state_change.renamed: true
+
+output.logstash:
+  hosts: ["${LOGSTASH}"]
+
+  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
+  ssl.certificate: "/usr/share/filebeat/certs/client/client.crt"
+  ssl.key: "/usr/share/filebeat/certs/client/client.key"

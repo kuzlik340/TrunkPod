@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 import logging
+import json
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -37,6 +38,26 @@ HTML_PAGE = """
 """
 name = "honeypot"
 port = 9000
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "service": "HoneyBridge",
+            "component": "FAKE_SSH",
+            "message": record.getMessage(),
+        }
+
+        # Add optional fields if present
+        if hasattr(record, "client_ip"):
+            log_record["client_ip"] = record.client_ip
+        if hasattr(record, "client_port"):
+            log_record["client_port"] = record.client_port
+
+        return json.dumps(log_record)
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         attacker_ip = self.client_address[0]
@@ -66,13 +87,14 @@ def run():
         port = int(sys.argv[1])
         name = sys.argv[2]
     LOG_FILE = f"/log/login_server{port}.log"
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] [HoneyBridge][%(name)s][LOGIN SERVER] %(message)s',
-        handlers=[logging.FileHandler(LOG_FILE, mode='a')]
-    )
     global logger
+    handler = logging.FileHandler(LOG_FILE, mode='a')
+    handler.setFormatter(JSONFormatter())
+
     logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.propagate = False
     server = HTTPServer(("0.0.0.0", port), Handler)
     logger.info(f"Service running on port {port}, just an info message")
     server.serve_forever()

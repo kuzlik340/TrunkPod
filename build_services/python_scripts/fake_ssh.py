@@ -11,6 +11,27 @@ import os
 import sys
 import struct
 import logging
+import json
+
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "service": "HoneyBridge",
+            "component": "FAKE_SSH",
+            "message": record.getMessage(),
+        }
+
+        # Add optional fields if present
+        if hasattr(record, "client_ip"):
+            log_record["client_ip"] = record.client_ip
+        if hasattr(record, "client_port"):
+            log_record["client_port"] = record.client_port
+
+        return json.dumps(log_record)
 
 # =========================
 # Configuration
@@ -21,12 +42,13 @@ if len(sys.argv) >= 3:
     port = int(sys.argv[1])
     name = sys.argv[2]
 LOG_FILE = f"/log/fake_ssh{port}.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] [HoneyBridge][%(name)s][FAKE_SSH] %(message)s',
-    handlers=[logging.FileHandler(LOG_FILE, mode='a')]
-)
+handler = logging.FileHandler(LOG_FILE, mode='a')
+handler.setFormatter(JSONFormatter())
+
 logger = logging.getLogger(name)
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
+logger.propagate = False
 AUTH_DELAY_SECONDS = 4   # artificial delay per attempt
 SSH_PORT = port         
 HOST_KEY_FILE = "/app/ssh_host_key"

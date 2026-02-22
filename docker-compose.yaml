@@ -1,0 +1,18 @@
+  
+services:
+  filebeat:
+      container_name: filebeat
+      restart: always
+      image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
+      user: filebeat  # Needed to access log files on the host?????
+      volumes:
+        - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+        - ${LOG_PATH}:${LOG_PATH}:ro
+        - ./certs/:/usr/share/filebeat/certs:ro
+      env_file:
+        - .env
+      logging:  # This is the Docker logging driver configuration
+        driver: "json-file"  # Default Docker logging driver
+        options:
+          max-size: "10m"  # Limit the size of log files
+          max-file: "3"  # Keep up to 3 log files
