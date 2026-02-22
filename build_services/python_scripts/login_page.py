@@ -61,7 +61,7 @@ class JSONFormatter(logging.Formatter):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         attacker_ip = self.client_address[0]
-        logger.info(f"GET request from IP: {attacker_ip}")
+        logger.warning(f"GET request from IP: {attacker_ip}")
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
 
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
-        logger.info(f"crdential captured from {attacker_ip} -> {data}")
+        logger.warning(f"crdential captured from {attacker_ip} -> {data}")
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")

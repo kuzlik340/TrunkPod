@@ -106,7 +106,7 @@ class RejectAllPasswords:
     def requestAvatarId(self, creds):
         username = creds.username.decode(errors="ignore")
         password = creds.password.decode(errors="ignore")
-        logger.info(f"Login attempt: {username} : {password}")
+        logger.warning(f"Login attempt: {username} : {password}")
 
 
         d = defer.Deferred()
@@ -125,7 +125,7 @@ class LoggingSSHTransport(SSHServerTransport):
     def connectionMade(self):
         peer = self.transport.getPeer()
 
-        logger.info(
+        logger.warning(
             f"SSH connection try from "
             f"{peer.host}:{peer.port}"
         )
@@ -165,14 +165,17 @@ class LoggingSSHTransport(SSHServerTransport):
         c2s_lang = get_namelist()
         s2c_lang = get_namelist()
 
-        logger.info(f"KEX: {kex}")
-        logger.info(f"HostKey: {hostkey}")
-        logger.info(f"C2S Enc: {c2s_enc}")
-        logger.info(f"S2C Enc: {s2c_enc}")
-        logger.info(f"C2S MAC: {c2s_mac}")
-        logger.info(f"S2C MAC: {s2c_mac}")
-        logger.info(f"Compression: {c2s_comp}")
-
+        
+        logger.warning(
+            "SSH Negotiation | "
+            f"KEX: {kex} | "
+            f"HostKey: {hostkey} | "
+            f"C2S Enc: {c2s_enc} | "
+            f"S2C Enc: {s2c_enc} | "
+            f"C2S MAC: {c2s_mac} | "
+            f"S2C MAC: {s2c_mac} | "
+            f"Compression: {c2s_comp}"
+        )
         # Now let Twisted continue normally
         return super().ssh_KEXINIT(packet)
         
