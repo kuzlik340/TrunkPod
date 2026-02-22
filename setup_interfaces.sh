@@ -28,6 +28,34 @@ rollback() {
 trap rollback ERR
 
 
+while true; do
+    read -rp "[?] Interfaces may already exist. Apply (k)eep, (o)verride, or (m)anual selection to ALL? [K/o/m]: " GLOBAL_CHOICE
+
+    # Default to keep if ENTER is pressed
+    
+    if [[ -z "$GLOBAL_CHOICE" ]]; then # ENTER key
+                choice="k"
+		break;
+    fi
+
+    # Normalize to lowercase (Bash 4+)
+    GLOBAL_CHOICE="${GLOBAL_CHOICE,,}"
+
+    case "$GLOBAL_CHOICE" in
+        k|o)
+            choice="$GLOBAL_CHOICE"
+	    break;
+            ;;
+        m)
+	    break;
+	    ;;
+        *)
+            echo "Invalid choice. Please enter k, o, or m."
+            ;;
+    esac
+done
+
+
 for i in $(seq 0 $((len - 1))); do
     # Reading configuration
     yq_safe vlan_id -r ".vlans[$i].id" "$NETWORK_CONF"
@@ -38,7 +66,9 @@ for i in $(seq 0 $((len - 1))); do
         print_warning "$iface already exists"
         # Ask user if he wants to keep this interface or override it
         while true; do
-            read -rp "[?] Do you want to (k)eep or (o)verride this interface? [K/o]: " choice
+            if [[ "$GLOBAL_CHOICE" == "m" ]]; then
+	    	read -rp "[?] Do you want to (k)eep or (o)verride this interface? [K/o]: " choice
+	    fi	
 
             if [[ -z "$choice" ]]; then # ENTER key
                 choice="k"
