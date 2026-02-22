@@ -40,7 +40,8 @@ rollback () {
     fi
     if [[ $container_running -eq 1 ]]; then
         print_info "Deleting pod"
-        podman rm -f "$current_container_name" > /dev/null
+	podman kill "$current_container_name" >/dev/null 2>&1 || true
+        podman rm "$current_container_name" >/dev/null 2>&1 || true
     fi
     print_info "Setup pods rollback completed"
     save_pods_stage "$current_pos"
