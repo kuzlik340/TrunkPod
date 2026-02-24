@@ -46,22 +46,26 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "service": "HoneyBridge",
-            "component": "FAKE_SSH",
+            "component": "FAKE_LOGIN_PAGE",
             "message": record.getMessage(),
         }
 
         # Add optional fields if present
-        if hasattr(record, "client_ip"):
-            log_record["client_ip"] = record.client_ip
-        if hasattr(record, "client_port"):
-            log_record["client_port"] = record.client_port
-
+        if hasattr(record, "src_ip_addr"):
+            log_record["src_ip_addr"] = record.src_ip_addr
+        if hasattr(record, "src_port"):
+            log_record["src_port"] = record.src_port
         return json.dumps(log_record)
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         attacker_ip = self.client_address[0]
-        logger.warning(f"GET request from IP: {attacker_ip}")
+        attacker_port = self.client_address[1]
+        logger.warning("GET request", 
+        extra={
+            "src_ip_addr": attacker_ip,
+            "src_port" : attacker_port,
+        },)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -70,10 +74,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         attacker_ip = self.client_address[0]
+        attacker_port = self.client_address[1]
 
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
-        logger.warning(f"crdential captured from {attacker_ip} -> {data}")
+        logger.warning(f"crdential captured {data}",
+        extra={
+            "src_ip_addr": attacker_ip,
+            "src_port" : attacker_port,
+        },)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
