@@ -26,11 +26,10 @@ class JSONFormatter(logging.Formatter):
         }
 
         # Add optional fields if present
-        if hasattr(record, "client_ip"):
-            log_record["client_ip"] = record.client_ip
-        if hasattr(record, "client_port"):
-            log_record["client_port"] = record.client_port
-
+        if hasattr(record, "src_ip_addr"):
+            log_record["src_ip_addr"] = record.src_ip_addr
+        if hasattr(record, "src_port"):
+            log_record["src_port"] = record.src_port
         return json.dumps(log_record)
 
 # =========================
@@ -96,6 +95,32 @@ class FakeRealm:
     def requestAvatar(self, avatarId, mind, *interfaces):
         return interfaces[0], FakeAvatar(avatarId), lambda: None
 
+
+class LoggingSSHUserAuth(userauth.SSHUserAuthServer):
+
+    def ssh_USERAUTH_REQUEST(self, packet):
+        from twisted.conch.ssh.common import getNS
+
+        user, rest = getNS(packet)
+        service, rest = getNS(rest)
+        method, rest = getNS(rest)
+
+        if method == b"password":
+            # skip "boolean change password"
+            rest = rest[1:]
+            password, _ = getNS(rest)
+
+            peer = self.transport.transport.getPeer()
+
+            logger.warning(
+                f"Login attempt: {user.decode(errors='ignore')} : {password.decode(errors='ignore')}",
+                extra={
+                    "src_ip_addr": peer.host,
+                    "src_port": peer.port,
+                },
+            )
+
+        return super().ssh_USERAUTH_REQUEST(packet)
 # =========================
 # Credential Checker
 # =========================
@@ -104,18 +129,9 @@ class RejectAllPasswords:
     credentialInterfaces = (credentials.IUsernamePassword,)
 
     def requestAvatarId(self, creds):
-        username = creds.username.decode(errors="ignore")
-        password = creds.password.decode(errors="ignore")
-        logger.warning(f"Login attempt: {username} : {password}")
-
-
         d = defer.Deferred()
-
-        # Delay AND reject correctly
-        def reject():
-            d.errback(error.UnauthorizedLogin("Invalid password"))
-
-        reactor.callLater(4, reject)
+        reactor.callLater(AUTH_DELAY_SECONDS,
+                          lambda: d.errback(error.UnauthorizedLogin("Invalid password")))
         return d
 
 # =========================
@@ -124,25 +140,24 @@ class RejectAllPasswords:
 class LoggingSSHTransport(SSHServerTransport):
     def connectionMade(self):
         peer = self.transport.getPeer()
-
+        self.peer = self.transport.getPeer()
         logger.warning(
-            f"SSH connection try from "
-            f"{peer.host}:{peer.port}"
+            f"SSH connection connect",
+            extra={
+                "src_ip_addr": peer.host,
+                "src_port": peer.port,
+            }
         )
         self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
         super().connectionMade()
 
-    def getService(self, service):
-        if service == b'ssh-userauth':
-            return LoggingSSHUserAuth
-        return super().getService(service)
 
     def ssh_KEXINIT(self, packet):
         # packet format:
         # byte      SSH_MSG_KEXINIT (20)
         # byte[16]  cookie
         # then 10 name-lists
-
+        peer = self.transport.getPeer()
         payload = packet
         pos = 16  # skip cookie
 
@@ -174,7 +189,11 @@ class LoggingSSHTransport(SSHServerTransport):
             f"S2C Enc: {s2c_enc} | "
             f"C2S MAC: {c2s_mac} | "
             f"S2C MAC: {s2c_mac} | "
-            f"Compression: {c2s_comp}"
+            f"Compression: {c2s_comp}",
+            extra={
+                   "src_ip_addr": peer.host,
+                   "src_port" : peer.port,
+            },
         )
         # Now let Twisted continue normally
         return super().ssh_KEXINIT(packet)
@@ -182,6 +201,10 @@ class LoggingSSHTransport(SSHServerTransport):
 
 class FakeSSHFactory(factory.SSHFactory):
     protocol = LoggingSSHTransport
+    services = {
+        b'ssh-userauth': LoggingSSHUserAuth,
+        b'ssh-connection': connection.SSHConnection,
+    }
     def __init__(self):
         self.portal = portal.Portal(FakeRealm())
         self.portal.registerChecker(RejectAllPasswords())
