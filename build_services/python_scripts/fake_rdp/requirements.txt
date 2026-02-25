@@ -1,0 +1,28 @@
+# RDP Honeypot Dependencies
+# Current implementation uses only Python standard library modules
+# No external dependencies required for basic functionality
+
+# Optional: For enhanced logging and development
+# pyinstaller>=5.13.0  # For building Windows executable
+pyasn1-modules>=0.3.0
+service-identity>=23.0.0
+construct>=2.10.0
+
+# Web服务相关
+flask>=2.3.0
+requests>=2.31.0
+
+# 数据处理和存储
+# sqlite3 已包含在Python标准库中
+
+# 开发和测试工具
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+ipython>=8.14.0
+
+# 系统和工具包
+psutil>=5.9.0
+python-dateutil>=2.8.0

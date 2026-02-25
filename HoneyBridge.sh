@@ -240,7 +240,7 @@ show_quote () {
         echo ""
         random_quote=$(shuf -n 1 "$PROJECT_ROOT"/assets/quotes.txt)
         echo -e "The configuration is done. $random_quote :)"
-        echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/all-containers.log${NC}"
+        echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/honeybridge/${NC}"
     fi
 }
 
