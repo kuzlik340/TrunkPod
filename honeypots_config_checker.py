@@ -9,6 +9,7 @@ INFO  = "[\033[35m*\033[0m] \033[35mINFO:\033[0m "
     
 ips = defaultdict(list)
 macs = defaultdict(list)
+name_map = defaultdict(list)
 
 errors = False
 PROJECT_ROOT = os.environ.get('PROJECT_ROOT')
@@ -43,6 +44,15 @@ config = load_yaml(config_path)
 # -----------------------------
 # IP and MAC uniqueness
 # -----------------------------
+for honeypot in config["honeypots"]:
+    name_map[honeypot["name"]].append(honeypot)
+
+for name, entries in name_map.items():
+    if len(entries) > 1:
+        print(f"{ERROR}Duplicate honeypot name '{name}' found "
+              f"{len(entries)} times.")
+        errors = True
+        
 for honeypot in config["honeypots"]:
     ips[honeypot["ip"]].append(honeypot["name"])
     macs[honeypot["mac"]].append(honeypot["name"])
