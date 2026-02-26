@@ -113,7 +113,7 @@ class LoggingSSHUserAuth(userauth.SSHUserAuthServer):
             peer = self.transport.transport.getPeer()
 
             logger.warning(
-                f"Login attempt: {user.decode(errors='ignore')} : {password.decode(errors='ignore')}",
+                f"Login attempt: {user.decode(errors='ignore')}:{password.decode(errors='ignore')}",
                 extra={
                     "src_ip_addr": peer.host,
                     "src_port": peer.port,
