@@ -9,7 +9,7 @@ trap rollback ERR
 
 print_info "Adding ${YELLOW}FAKE_SSH${NC} service into your $IMAGE_NAME"
 
-print_info "Copying python script for fake ssh"
+print_info "Copying python script for fake_ssh"
 run_buildah run "$ctr" mkdir -p /app
 run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/python_scripts/fake_ssh.py /app/fake_ssh.py
 

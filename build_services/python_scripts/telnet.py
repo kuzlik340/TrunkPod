@@ -5,6 +5,9 @@ import logging
 import json
 from datetime import datetime
 
+
+AUTH_DELAY_SECONDS = 4
+
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log_record = {
@@ -51,10 +54,8 @@ class HoneypotProtocol(TelnetProtocol):
                 "src_ip_addr": peer.host,
                 "src_port": peer.port,
             })
-            
-            self.transport.write(b"Login incorrect\nlogin: ")
-            del self.username
-            del self.password
+
+            reactor.callLater(AUTH_DELAY_SECONDS, self._finishLogin, peer)
         else:
             logger.warning(f"Command tried: {text}", 
             extra={
@@ -62,6 +63,11 @@ class HoneypotProtocol(TelnetProtocol):
                 "src_port": peer.port,
             })
             self.transport.write(b"sh: command not found\n$ ")
+    
+    def _finishLogin(self, peer):
+        self.transport.write(b"Login incorrect\nlogin: ")
+        del self.username
+        del self.password
 
 class HoneypotFactory(protocol.Factory):
     def buildProtocol(self, addr):
