@@ -7,7 +7,7 @@ ctr="$2"
 source "$PROJECT_ROOT"/build_services/base_functions.sh
 trap rollback ERR 
 
-run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/configs/supervisord.conf /etc/supervisor/supervisord.conf
+run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/supervisor_configs/supervisord.conf /etc/supervisor/supervisord.conf
 run_buildah config \
     --cmd '["/usr/bin/supervisord","-c","/etc/supervisor/supervisord.conf"]' \
     "$ctr"

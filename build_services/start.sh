@@ -25,7 +25,7 @@ run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
 
 for service in "${services[@]}"; do
     print_info "Copying Supervisor configs"
-    run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/configs/supervisor/"$service*".conf /etc/supervisor/conf.d/
+    run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/supervisor_configs/supervisor/"$service*".conf /etc/supervisor/conf.d/
     print_info "Building service: $service"
     trap - ERR
     "$PROJECT_ROOT"/build_services/build_"$service".sh "$IMAGE_NAME" "$ctr"

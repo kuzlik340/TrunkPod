@@ -50,8 +50,8 @@ logger.addHandler(handler)
 logger.propagate = False
 AUTH_DELAY_SECONDS = 4   # artificial delay per attempt
 SSH_PORT = port         
-HOST_KEY_FILE = "/app/ssh_host_key"
-os.makedirs("/app", exist_ok=True)
+HOST_KEY_FILE = "/ssh/ssh_host_key"
+os.makedirs("/ssh", exist_ok=True)
 # =========================
 # Generate host key once
 # =========================

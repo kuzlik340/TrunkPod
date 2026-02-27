@@ -65,18 +65,18 @@ load_honeypot_config () {
 }
 
 prepare_supervisor_configs () {
-    rm -rf "$PROJECT_ROOT"/build_services/configs/supervisor
-    mkdir -p "$PROJECT_ROOT"/build_services/configs/supervisor
+    rm -rf "$PROJECT_ROOT"/build_services/supervisor_configs/supervisor
+    mkdir -p "$PROJECT_ROOT"/build_services/supervisor_configs/supervisor
     print_info "Configuring $honeypot_name ports"
     for idx in "${!service_names[@]}"; do
         local name="${service_names[$idx]}"
         local port="${service_ports[$idx]}"
 
         # Copy template supervisor config
-        cp "$PROJECT_ROOT"/build_services/configs/supervisor_templates/"${name}".conf \
-        "$PROJECT_ROOT"/build_services/configs/supervisor/"${name}${port}".conf
+        cp "$PROJECT_ROOT"/build_services/supervisor_configs/supervisor_templates/"${name}".conf \
+        "$PROJECT_ROOT"/build_services/supervisor_configs/supervisor/"${name}${port}".conf
 
-        conf_path="$PROJECT_ROOT/build_services/configs/supervisor/"${name}${port}".conf"
+        conf_path="$PROJECT_ROOT/build_services/supervisor_configs/supervisor/"${name}${port}".conf"
 
         if [[ -f "$conf_path" ]]; then
             # Replace "insert_port" with the actual port
