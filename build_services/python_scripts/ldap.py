@@ -25,7 +25,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "service": "HoneyBridge",
-            "component": "FAKE_LDAP",
+            "component": "LDAP",
             "message": record.getMessage(),
         }
 
@@ -484,7 +484,7 @@ def main():
     if not default_nc:
         default_nc = naming_contexts[0]
 
-    LOG_FILE = f"/log/fake_ldap{args.port}.log"
+    LOG_FILE = f"/log/ldap{args.port}.log"
     handler = logging.FileHandler(LOG_FILE, mode='a')
     handler.setFormatter(JSONFormatter())
     global logger

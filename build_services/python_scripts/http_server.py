@@ -46,7 +46,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "service": "HoneyBridge",
-            "component": "FAKE_LOGIN_PAGE",
+            "component": "HTTP_SERVER",
             "message": record.getMessage(),
         }
 
@@ -58,24 +58,40 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(log_record)
 
 class Handler(BaseHTTPRequestHandler):
+    html_dir = None  # class-level variable set during run()
+
     def do_GET(self):
         attacker_ip = self.client_address[0]
         attacker_port = self.client_address[1]
-        logger.warning("GET request", 
-        extra={
-            "src_ip_addr": attacker_ip,
-            "src_port" : attacker_port,
-        },)
+        logger.warning("GET request",
+            extra={"src_ip_addr": attacker_ip, "src_port": attacker_port})
 
+        # Serve CSS files if requested
+        if self.path.endswith(".css") and self.html_dir:
+            css_path = os.path.join(self.html_dir, os.path.basename(self.path))
+            if os.path.exists(css_path):
+                self.send_response(200)
+                self.send_header("Content-type", "text/css")
+                self.end_headers()
+                with open(css_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
+        # Serve main HTML page
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(HTML_PAGE.encode())
 
+        if self.html_dir:
+            html_path = os.path.join(self.html_dir, "index.html")
+            with open(html_path, "rb") as f:
+                self.wfile.write(f.read())
+        else:
+            self.wfile.write(HTML_PAGE.encode())
+    
     def do_POST(self):
         attacker_ip = self.client_address[0]
         attacker_port = self.client_address[1]
-
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
         logger.warning(f"crdential captured {data}",
@@ -83,19 +99,17 @@ class Handler(BaseHTTPRequestHandler):
             "src_ip_addr": attacker_ip,
             "src_port" : attacker_port,
         },)
-
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-
         self.wfile.write(b"<h2>Invalid credentials</h2>")
-
+    
 def run():
     global port, name
     if len(sys.argv) >= 3:
         port = int(sys.argv[1])
         name = sys.argv[2]
-    LOG_FILE = f"/log/login_server{port}.log"
+    LOG_FILE = f"/log/http_server{port}.log"
     global logger
     handler = logging.FileHandler(LOG_FILE, mode='a')
     handler.setFormatter(JSONFormatter())
@@ -104,6 +118,12 @@ def run():
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     logger.propagate = False
+    if len(sys.argv) >= 4:
+        html_dir = sys.argv[3]
+        if not os.path.isdir(html_dir):
+            print(f"Error: {html_dir} is not a valid directory")
+            sys.exit(1)
+        Handler.html_dir = html_dir
     server = HTTPServer(("0.0.0.0", port), Handler)
     logger.info(f"Service running on port {port}, just an info message")
     server.serve_forever()

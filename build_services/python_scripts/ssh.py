@@ -21,7 +21,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "service": "HoneyBridge",
-            "component": "FAKE_SSH",
+            "component": "SSH",
             "message": record.getMessage(),
         }
 
@@ -40,7 +40,7 @@ name = "honeypot"
 if len(sys.argv) >= 3:
     port = int(sys.argv[1])
     name = sys.argv[2]
-LOG_FILE = f"/log/fake_ssh{port}.log"
+LOG_FILE = f"/log/ssh{port}.log"
 handler = logging.FileHandler(LOG_FILE, mode='a')
 handler.setFormatter(JSONFormatter())
 

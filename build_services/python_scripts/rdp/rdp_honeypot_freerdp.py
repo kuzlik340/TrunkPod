@@ -29,7 +29,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "service": "HoneyBridge",
-            "component": "FAKE_RDP",
+            "component": "RDP",
             "message": record.getMessage(),
         }
         if hasattr(record, "src_ip_addr"):
@@ -1314,7 +1314,7 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         port = int(sys.argv[1])
         name = sys.argv[2]
-    LOG_FILE = f"/log/fake_rdp{port}.log"
+    LOG_FILE = f"/log/rdp{port}.log"
     global logger
     handler = logging.FileHandler(LOG_FILE, mode='a')
     handler.setFormatter(JSONFormatter())
