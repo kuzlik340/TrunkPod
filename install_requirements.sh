@@ -25,7 +25,6 @@ install_package podman
 install_package arping
 install_package yq
 install_package python3
-install_package suricata
 
 if [ "$installed" -eq 1 ]; then
     print_success "Tools are installed"

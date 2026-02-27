@@ -31,7 +31,8 @@ yq_safe() {
 }
 
 print_stage() {
-    local total_width=100
+    local total_width
+    total_width=$(tput cols)
     local text="$*"
     local text_len=${#text}
     local padding=$(( total_width - text_len - 2 ))
