@@ -31,7 +31,7 @@ for service in "${services[@]}"; do
     "$PROJECT_ROOT"/build_services/build_"$service".sh "$IMAGE_NAME" "$ctr"
     trap rollback ERR
 done
-rm -rf configs/supervisor
+rm -rf "$PROJECT_ROOT"/build_services/supervisor_configs/supervisor/
 "$PROJECT_ROOT"/build_services/finish.sh "$IMAGE_NAME" "$ctr"
 
 
