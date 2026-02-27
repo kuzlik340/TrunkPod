@@ -65,9 +65,40 @@ require_root () {
 
 # Clean build logs
 clean_build_logs () {
-    print_info "Cleaning logs..."
+    print_info "Cleaning build logs..."
     rm -f /var/log/honeybridge_build*
-    print_success "Logs are ${GREEN}succesfully${NC} cleaned"
+    print_success "Honeybridge build logs are ${GREEN}succesfully${NC} cleaned"
+}
+
+clean_honeypot_logs () {
+    while true; do
+        read -rp "[?] Are you sure you want to clean all honeypot produced logs? All deployed honeypots will be stopped with this action. [y/N]" CHOICE
+        
+        if [[ -z "$CHOICE" ]]; then # ENTER key
+            print_info "Exiting, nothing will be deleted"
+            exit 0
+        fi
+
+        # Normalize to lowercase
+        CHOICE="${CHOICE,,}"
+
+        case "$CHOICE" in
+            y)
+                break;
+                ;;
+            n)
+                print_info "Exiting, nothing will be deleted"
+                exit 0
+                ;;
+            *)
+                echo "Invalid choice. Please enter y or n."
+                ;;
+        esac
+    done
+    clean
+    print_info "Cleaning honeypot logs..."
+    rm -rf /var/log/honeybridge/
+    print_success "Honeypot logs are ${GREEN}succesfully${NC} cleaned"
 }
 
 # =======================================================================================
@@ -214,7 +245,7 @@ parse_args() {
         --help) show_help; exit 0 ;;
         --clean) clean; exit 0 ;;
         --clean-build-logs) clean_build_logs; exit 0 ;;
-        --clean-honeypot-logs) rm /var/log/all-containers.log && print_info "Honeypot logs cleaned"; exit 0 ;;
+        --clean-honeypot-logs) clean_honeypot_logs; exit 0 ;;
         --force-rebuild-base)
             rebuild_base=1
             downgrade_stage_if_needed

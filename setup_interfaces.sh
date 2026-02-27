@@ -30,15 +30,13 @@ trap rollback ERR
 
 while true; do
     read -rp "[?] Interfaces may already exist. Apply (k)eep, (o)verride, or (m)anual selection to ALL? [K/o/m]: " GLOBAL_CHOICE
-
-    # Default to keep if ENTER is pressed
     
     if [[ -z "$GLOBAL_CHOICE" ]]; then # ENTER key
                 choice="k"
 		break;
     fi
 
-    # Normalize to lowercase (Bash 4+)
+    # Normalize to lowercase
     GLOBAL_CHOICE="${GLOBAL_CHOICE,,}"
 
     case "$GLOBAL_CHOICE" in
