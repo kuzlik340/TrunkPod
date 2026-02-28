@@ -13,28 +13,24 @@ import logging
 
 from json_formatter import JSONFormatter
 
-
+HOST_KEY_FILE = "/ssh/ssh_host_key"
+AUTH_DELAY_SECONDS = 4   # To make brute-foce for client slow as hell 
 
 # =========================
 # Configuration
 # =========================
-port = 22
-name = "honeypot"
-if len(sys.argv) >= 3:
-    port = int(sys.argv[1])
-    name = sys.argv[2]
-LOG_FILE = f"/log/ssh{port}.log"
-handler = logging.FileHandler(LOG_FILE, mode='a')
-handler.setFormatter(JSONFormatter())
 
-logger = logging.getLogger(name)
-logger.setLevel(logging.INFO)
-logger.addHandler(handler)
-logger.propagate = False
-AUTH_DELAY_SECONDS = 4   # To make brute-foce for client slow as hell
-SSH_PORT = port         
-HOST_KEY_FILE = "/ssh/ssh_host_key"
-os.makedirs("/ssh", exist_ok=True)
+def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    handler = logging.FileHandler(log_file, mode="a")
+    handler.setFormatter(JSONFormatter(dst_ip, dst_port, "SSH"))
+    logger.addHandler(handler)
+
+    return logger
+
 # =========================
 # Generate host key once
 # =========================
@@ -51,12 +47,6 @@ def generate_host_key():
                 encryption_algorithm=serialization.NoEncryption(),
             )
         )
-
-try:
-    open(HOST_KEY_FILE)
-except FileNotFoundError:
-    logger.info("[*] Generating SSH host key")
-    generate_host_key()
 
 # =========================
 # Fake Avatar
@@ -208,10 +198,48 @@ class FakeSSHFactory(factory.SSHFactory):
             b"rsa-sha2-512": key,
         }
 
+def parse_args() -> tuple[int, str, str]:
+    """Returns (port, name, dst_ip)."""
+    if len(sys.argv) >= 4:
+        return int(sys.argv[1]), sys.argv[2], sys.argv[3]
+    return 22, "honeypot", "0.0.0.0"
+
+def ensure_host_key():
+    """Generate an RSA host key if one doesn't exist yet."""
+    if os.path.exists(HOST_KEY_FILE):
+        return
+
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives import serialization
+
+    logger.info("Generating SSH host key")
+    print("[HoneyBridge] Generating SSH host key...")
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    os.makedirs(os.path.dirname(HOST_KEY_FILE), exist_ok=True)
+
+    with open(HOST_KEY_FILE, "wb") as f:
+        f.write(key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        ))
 
 # =========================
 # Start Server
 # =========================
-logger.info(f"Service running on port {SSH_PORT}, just an info message")
-reactor.listenTCP(SSH_PORT, FakeSSHFactory())
-reactor.run()
+
+def main():
+    port, name, dst_ip = parse_args()
+
+    log_file = f"/log/ssh{port}.log"
+    global logger
+    logger = build_logger(name, log_file, dst_ip, port) 
+    ensure_host_key()   
+
+    logger.info(f"Service running on port {port}, just an info message")
+    reactor.listenTCP(port, FakeSSHFactory())
+    reactor.run()
+
+if __name__ == "__main__":
+    main()
