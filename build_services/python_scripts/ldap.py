@@ -6,7 +6,7 @@ from twisted.internet import reactor, protocol
 from twisted.python import log
 from datetime import datetime
 import logging
-import json
+from json_formatter import JSONFormatter
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,23 +18,17 @@ LDAP_RESULT_INVALID_CREDENTIALS = 49
 LDAP_RESULT_INSUFFICIENT_ACCESS = 50
 LDAP_RESULT_UNWILLING_TO_PERFORM = 53
 
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
-            "level": record.levelname,
-            "logger": record.name,
-            "service": "HoneyBridge",
-            "component": "LDAP",
-            "message": record.getMessage(),
-        }
 
-        # Add optional fields if present
-        if hasattr(record, "src_ip_addr"):
-            log_record["src_ip_addr"] = record.src_ip_addr
-        if hasattr(record, "src_port"):
-            log_record["src_port"] = record.src_port
-        return json.dumps(log_record)
+def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    handler = logging.FileHandler(log_file, mode="a")
+    handler.setFormatter(JSONFormatter(dst_ip, dst_port, "LDAP"))
+    logger.addHandler(handler)
+
+    return logger
 
 class _IncompleteBER(Exception):
     pass
@@ -458,6 +452,7 @@ def main():
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the LDAP server to.")
     parser.add_argument("--port", type=int, default=389, help="Port to bind the LDAP server to.")
     parser.add_argument("--honeypot-name", type=str, default="honeypot", help="Honeypot name for logging")
+    parser.add_argument("--dst-ip", type=str, default="honeypot", help="Honeypot name for logging")
     parser.add_argument("--vendor-name", type=str, default="Microsoft Corporation", help="RootDSE vendorName value.")
     parser.add_argument("--vendor-version", type=str, default="Windows Server", help="RootDSE vendorVersion value.")
     parser.add_argument(
@@ -484,15 +479,10 @@ def main():
     if not default_nc:
         default_nc = naming_contexts[0]
 
-    LOG_FILE = f"/log/ldap{args.port}.log"
-    handler = logging.FileHandler(LOG_FILE, mode='a')
-    handler.setFormatter(JSONFormatter())
+    log_file = f"/log/ldap{args.port}.log"
     global logger
-    logger = logging.getLogger(args.honeypot_name)
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.propagate = False
-    logger.info(f"Service running on port {args.port}, just an info message")
+    logger = build_logger(args.honeypot_name, log_file, args.dst_ip, args.port)
+    logger.info(f"Service LDAP running on port {args.port}, just an info message")
 
     ldap_factory = SimpleLDAPFactory()
     ldap_factory.ldap_vendor_name = str(args.vendor_name)

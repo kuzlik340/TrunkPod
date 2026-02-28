@@ -237,7 +237,7 @@ def main():
     logger = build_logger(name, log_file, dst_ip, port) 
     ensure_host_key()   
 
-    logger.info(f"Service running on port {port}, just an info message")
+    logger.info(f"Service SSH running on port {port}, just an info message")
     reactor.listenTCP(port, FakeSSHFactory())
     reactor.run()
 

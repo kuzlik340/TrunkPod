@@ -174,7 +174,7 @@ def main():
     log_file = f"/log/telnet{port}.log"
 
     logger = build_logger(name, log_file, dst_ip, port)
-    logger.info(f"HoneyBridge TELNET starting on port {port}")
+    logger.info(f"Service TELNET running on port {port}, just an info message")
 
     factory = HoneypotFactory(logger)
     reactor.listenTCP(port, factory)

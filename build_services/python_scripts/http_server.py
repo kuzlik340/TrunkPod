@@ -116,7 +116,7 @@ def run():
         Handler.html_dir = html_dir
 
     server = HTTPServer(("0.0.0.0", port), Handler)
-    logger.info(f"Service running on port {port}, just an info message")
+    logger.info(f"Service HTTP running on port {port}, just an info message")
     server.serve_forever()
 
 if __name__ == "__main__":
