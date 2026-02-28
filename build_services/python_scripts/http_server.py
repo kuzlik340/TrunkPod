@@ -2,9 +2,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import os
 import time
-from datetime import datetime
 import logging
-import json
+from json_formatter import JSONFormatter
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -39,23 +38,16 @@ HTML_PAGE = """
 name = "honeypot"
 port = 9000
 
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
-            "level": record.levelname,
-            "logger": record.name,
-            "service": "HoneyBridge",
-            "component": "HTTP_SERVER",
-            "message": record.getMessage(),
-        }
+def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
 
-        # Add optional fields if present
-        if hasattr(record, "src_ip_addr"):
-            log_record["src_ip_addr"] = record.src_ip_addr
-        if hasattr(record, "src_port"):
-            log_record["src_port"] = record.src_port
-        return json.dumps(log_record)
+    handler = logging.FileHandler(log_file, mode="a")
+    handler.setFormatter(JSONFormatter(dst_ip, dst_port, "HTTP"))
+    logger.addHandler(handler)
+
+    return logger
 
 class Handler(BaseHTTPRequestHandler):
     html_dir = None  # class-level variable set during run()
@@ -103,27 +95,26 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(b"<h2>Invalid credentials</h2>")
-    
-def run():
-    global port, name
-    if len(sys.argv) >= 3:
-        port = int(sys.argv[1])
-        name = sys.argv[2]
-    LOG_FILE = f"/log/http_server{port}.log"
-    global logger
-    handler = logging.FileHandler(LOG_FILE, mode='a')
-    handler.setFormatter(JSONFormatter())
 
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.propagate = False
+def parse_args() -> tuple[int, str, str]:
+    """Returns (port, name, dst_ip)."""
     if len(sys.argv) >= 4:
-        html_dir = sys.argv[3]
+        return int(sys.argv[1]), sys.argv[2], sys.argv[3]
+    return 80, "honeypot", "0.0.0.0"
+
+def run():
+    port, name, dst_ip = parse_args()
+    log_file = f"/log/http_server{port}.log"
+    global logger
+    logger = build_logger(name, log_file, dst_ip, port)
+
+    if len(sys.argv) >= 5:
+        html_dir = sys.argv[4]
         if not os.path.isdir(html_dir):
             print(f"Error: {html_dir} is not a valid directory")
             sys.exit(1)
         Handler.html_dir = html_dir
+
     server = HTTPServer(("0.0.0.0", port), Handler)
     logger.info(f"Service running on port {port}, just an info message")
     server.serve_forever()
