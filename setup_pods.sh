@@ -83,6 +83,7 @@ prepare_supervisor_configs () {
             sed -i "s/insert_ps_name/${name}${port}/g" "${conf_path}"
             sed -i "s/insert_port/${port}/g" "${conf_path}"
             sed -i "s/insert_honeypot_name/${honeypot_name}/g" "${conf_path}"
+            sed -i "s/insert_ip_address/${honeypot_ip}/g" "${conf_path}"
         else
             print_warning "No supervisor config for service '$name' (${conf_path})"
         fi

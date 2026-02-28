@@ -5,32 +5,15 @@ from twisted.cred import portal, credentials, error
 from twisted.internet import reactor, defer
 from zope.interface import implementer
 from twisted.python import log
-from datetime import datetime
 from twisted.conch.ssh.transport import SSHServerTransport
 import os
 import sys
 import struct
 import logging
-import json
+
+from json_formatter import JSONFormatter
 
 
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
-            "level": record.levelname,
-            "logger": record.name,
-            "service": "HoneyBridge",
-            "component": "SSH",
-            "message": record.getMessage(),
-        }
-
-        # Add optional fields if present
-        if hasattr(record, "src_ip_addr"):
-            log_record["src_ip_addr"] = record.src_ip_addr
-        if hasattr(record, "src_port"):
-            log_record["src_port"] = record.src_port
-        return json.dumps(log_record)
 
 # =========================
 # Configuration
@@ -48,7 +31,7 @@ logger = logging.getLogger(name)
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.propagate = False
-AUTH_DELAY_SECONDS = 4   # artificial delay per attempt
+AUTH_DELAY_SECONDS = 4   # To make brute-foce for client slow as hell
 SSH_PORT = port         
 HOST_KEY_FILE = "/ssh/ssh_host_key"
 os.makedirs("/ssh", exist_ok=True)
