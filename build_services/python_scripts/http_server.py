@@ -3,7 +3,69 @@ import sys
 import os
 import time
 import logging
+import random
 from json_formatter import JSONFormatter
+
+SERVER_PROFILES = [
+    {
+        "Server": "Apache/2.4.57 (Ubuntu)",
+        "X-Powered-By": "PHP/8.1.2",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+    },
+    {
+        "Server": "Apache/2.4.51 (CentOS)",
+        "X-Powered-By": "PHP/7.4.33",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache",
+    },
+    {
+        "Server": "nginx/1.24.0",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
+        "X-XSS-Protection": "1; mode=block",
+    },
+    {
+        "Server": "nginx/1.18.0 (Ubuntu)",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "1; mode=block",
+        "Cache-Control": "no-cache, no-store",
+    },
+    {
+        "Server": "Microsoft-IIS/10.0",
+        "X-Powered-By": "ASP.NET",
+        "X-AspNet-Version": "4.0.30319",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Cache-Control": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+    },
+    {
+        "Server": "Microsoft-IIS/8.5",
+        "X-Powered-By": "ASP.NET",
+        "X-AspNet-Version": "2.0.50727",
+        "X-Frame-Options": "DENY",
+        "Cache-Control": "private",
+    },
+    {
+        "Server": "Apache-Coyote/1.1",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
+        "X-XSS-Protection": "1; mode=block",
+    },
+    {
+        "Server": "lighttpd/1.4.67",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+    },
+]
+
+SERVER_PROFILE = random.choice(SERVER_PROFILES)
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -50,7 +112,18 @@ def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> loggin
     return logger
 
 class Handler(BaseHTTPRequestHandler):
-    html_dir = None  # class-level variable set during run()
+    html_dir = None
+
+    def version_string(self):
+        return SERVER_PROFILE.get("Server", "Apache/2.4.57 (Ubuntu)")
+
+    def log_message(self, format, *args):
+        pass  # suppress default stderr output
+
+    def _send_profile_headers(self):
+        for key, value in SERVER_PROFILE.items():
+            if key != "Server":  # already set via version_string()
+                self.send_header(key, value)
 
     def do_GET(self):
         attacker_ip = self.client_address[0]
@@ -58,20 +131,20 @@ class Handler(BaseHTTPRequestHandler):
         logger.warning("GET request",
             extra={"src_ip_addr": attacker_ip, "src_port": attacker_port})
 
-        # Serve CSS files if requested
         if self.path.endswith(".css") and self.html_dir:
             css_path = os.path.join(self.html_dir, os.path.basename(self.path))
             if os.path.exists(css_path):
                 self.send_response(200)
                 self.send_header("Content-type", "text/css")
+                self._send_profile_headers()
                 self.end_headers()
                 with open(css_path, "rb") as f:
                     self.wfile.write(f.read())
                 return
 
-        # Serve main HTML page
         self.send_response(200)
         self.send_header("Content-type", "text/html")
+        self._send_profile_headers()
         self.end_headers()
 
         if self.html_dir:
@@ -80,19 +153,20 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(f.read())
         else:
             self.wfile.write(HTML_PAGE.encode())
-    
+
     def do_POST(self):
         attacker_ip = self.client_address[0]
         attacker_port = self.client_address[1]
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
-        logger.warning(f"crdential captured {data}",
+        logger.warning(f"credential captured {data}",
         extra={
             "src_ip_addr": attacker_ip,
-            "src_port" : attacker_port,
+            "src_port": attacker_port,
         },)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
+        self._send_profile_headers()
         self.end_headers()
         self.wfile.write(b"<h2>Invalid credentials</h2>")
 
