@@ -1,10 +1,12 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import ssl
 import sys
 import os
 import time
 import logging
 import random
 from json_formatter import JSONFormatter
+
 
 SERVER_PROFILES = [
     {
@@ -50,7 +52,9 @@ SERVER_PROFILES = [
     },
 ]
 
+
 SERVER_PROFILE = random.choice(SERVER_PROFILES)
+
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -85,16 +89,18 @@ HTML_PAGE = """
 name = "honeypot"
 port = 9000
 
+
 def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     logger.propagate = False
 
     handler = logging.FileHandler(log_file, mode="a")
-    handler.setFormatter(JSONFormatter(dst_ip, dst_port, "HTTP"))
+    handler.setFormatter(JSONFormatter(dst_ip, dst_port, "HTTPS"))  # <-- changed to HTTPS
     logger.addHandler(handler)
 
     return logger
+
 
 class Handler(BaseHTTPRequestHandler):
     html_dir = None
@@ -107,18 +113,17 @@ class Handler(BaseHTTPRequestHandler):
 
     def _send_profile_headers(self):
         for key, value in SERVER_PROFILE.items():
-            if key != "Server":  # already set via version_string()
+            if key != "Server":
                 self.send_header(key, value)
 
     def do_GET(self):
         attacker_ip = self.client_address[0]
         attacker_port = self.client_address[1]
         logger.warning("GET request",
-            extra={"src_ip_addr": attacker_ip, 
-                   "src_port": attacker_port, 
+            extra={"src_ip_addr": attacker_ip,
+                   "src_port": attacker_port,
                    "path": self.path
         })
-
 
         allowed = self.path == "/" or self.path == "/login" or (self.path.endswith(".css") and self.html_dir)
         if not allowed:
@@ -139,7 +144,7 @@ class Handler(BaseHTTPRequestHandler):
                 with open(css_path, "rb") as f:
                     self.wfile.write(f.read())
                 return
-            
+
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self._send_profile_headers()
@@ -163,7 +168,7 @@ class Handler(BaseHTTPRequestHandler):
                 "src_port": attacker_port,
                 "path": self.path,
         },)
-        
+
         allowed = self.path == "/" or self.path == "/login" or (self.path.endswith(".css") and self.html_dir)
         if not allowed:
             self.send_response(403)
@@ -179,15 +184,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"<h2>Invalid credentials</h2>")
 
-def parse_args() -> tuple[int, str, str]:
-    """Returns (port, name, dst_ip)."""
-    if len(sys.argv) >= 4:
+
+def parse_args() -> tuple[int, str, str, str, str]:
+    """Returns (port, name, dst_ip, certfile, keyfile)."""
+    if len(sys.argv) >= 6:
         return int(sys.argv[1]), sys.argv[2], sys.argv[3]
-    return 80, "honeypot", "0.0.0.0"
+    return 443, "honeypot", "0.0.0.0"
+
 
 def run():
     port, name, dst_ip = parse_args()
-    log_file = f"/log/http_server{port}.log"
+    certfile = "/https/cert.pem"
+    keyfile = "/https/key.pem"
+    log_file = f"/log/https_server{port}.log"
     global logger
     logger = build_logger(name, log_file, dst_ip, port)
 
@@ -198,9 +207,17 @@ def run():
             sys.exit(1)
         Handler.html_dir = html_dir
 
+    # ── SSL wrapping ──────────────────────────────────────────────────────────
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile=certfile, keyfile=keyfile)
+    # ─────────────────────────────────────────────────────────────────────────
+
     server = HTTPServer(("0.0.0.0", port), Handler)
-    logger.info(f"Service HTTP running on port {port}, just an info message")
+    server.socket = context.wrap_socket(server.socket, server_side=True)  # <-- key line
+
+    logger.info(f"Service HTTPS running on port {port}, just an info message")
     server.serve_forever()
+
 
 if __name__ == "__main__":
     run()
