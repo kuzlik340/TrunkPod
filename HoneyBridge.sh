@@ -58,7 +58,7 @@ clean_silent() {
 # Ask for running program from root
 require_root () {
     if [[ "$EUID" -ne 0 ]]; then
-        print_error "This program must be run as root. Use sudo."
+        print_error "Permission denied: root privileges required. Re-run with sudo."
         exit 1
     fi
 }
@@ -295,7 +295,8 @@ Examples:
   sudo ./HoneyBridge --clean
   sudo ./HoneyBridge --clean-build-logs
   sudo ./Honeybridge --force-rebuild-base
-Notice! The program won't start until run with sudo.
+
+Notice! The program won't start until run with sudo. Program accepts only one flag each run.
 EOF
 }
 
