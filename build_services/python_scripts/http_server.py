@@ -134,6 +134,16 @@ class Handler(BaseHTTPRequestHandler):
                    "path": self.path
         })
 
+
+        allowed = self.path == "/" or self.path == "/login" or (self.path.endswith(".css") and self.html_dir)
+        if not allowed:
+            self.send_response(403)
+            self.send_header("Content-type", "text/html")
+            self._send_profile_headers()
+            self.end_headers()
+            self.wfile.write(b"<h1>403 Forbidden</h1>")
+            return
+
         if self.path.endswith(".css") and self.html_dir:
             css_path = os.path.join(self.html_dir, os.path.basename(self.path))
             if os.path.exists(css_path):
@@ -144,7 +154,7 @@ class Handler(BaseHTTPRequestHandler):
                 with open(css_path, "rb") as f:
                     self.wfile.write(f.read())
                 return
-
+            
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self._send_profile_headers()
@@ -168,6 +178,16 @@ class Handler(BaseHTTPRequestHandler):
                 "src_port": attacker_port,
                 "path": self.path,
         },)
+        
+        allowed = self.path == "/" or self.path == "/login" or (self.path.endswith(".css") and self.html_dir)
+        if not allowed:
+            self.send_response(403)
+            self.send_header("Content-type", "text/html")
+            self._send_profile_headers()
+            self.end_headers()
+            self.wfile.write(b"<h1>403 Forbidden</h1>")
+            return
+
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self._send_profile_headers()
