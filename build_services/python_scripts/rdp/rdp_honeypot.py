@@ -19,24 +19,18 @@ import datetime
 import os
 import sys
 from io import BytesIO
-import json
+from json_formatter import JSONFormatter
 
+def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
 
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "timestamp": datetime.datetime.utcfromtimestamp(record.created).isoformat() + "Z",
-            "level": record.levelname,
-            "logger": record.name,
-            "service": "HoneyBridge",
-            "component": "RDP",
-            "message": record.getMessage(),
-        }
-        if hasattr(record, "src_ip_addr"):
-            log_record["src_ip_addr"] = record.src_ip_addr
-        if hasattr(record, "src_port"):
-            log_record["src_port"] = record.src_port
-        return json.dumps(log_record)
+    handler = logging.FileHandler(log_file, mode="a")
+    handler.setFormatter(JSONFormatter(dst_ip, dst_port, "RDP"))
+    logger.addHandler(handler)
+
+    return logger
 
 
 class RDPProtocolFreeRDP:
@@ -1306,23 +1300,18 @@ class RDPHoneypotFreeRDP:
                 pass
         self.logger.info("RDP Honeypot stopped")
 
+def parse_args() -> tuple[int, str, str]:
+    """Returns (port, name, dst_ip)."""
+    if len(sys.argv) >= 4:
+        return int(sys.argv[1]), sys.argv[2], sys.argv[3]
+    return 3389, "honeypot", "0.0.0.0"
 
 if __name__ == "__main__":
     # Run the honeypot server
-    port = 3389
-    name = "honeypot"
-    if len(sys.argv) >= 3:
-        port = int(sys.argv[1])
-        name = sys.argv[2]
-    LOG_FILE = f"/log/rdp{port}.log"
+    port, name, dst_ip = parse_args()
+    log_file = f"/log/rdp{port}.log"
     global logger
-    handler = logging.FileHandler(LOG_FILE, mode='a')
-    handler.setFormatter(JSONFormatter())
-
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.propagate = False
+    logger = build_logger(name, log_file, dst_ip, port) 
 
     honeypot = RDPHoneypotFreeRDP(host='0.0.0.0', port=port, log_level=logging.DEBUG)
     
