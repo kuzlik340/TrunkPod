@@ -28,5 +28,7 @@ class JSONFormatter(logging.Formatter):
             log_record["src_ip_addr"] = record.src_ip_addr
         if hasattr(record, "src_port"):
             log_record["src_port"] = record.src_port
+        if hasattr(record, "path"): # used for http
+            log_record["path"] = record.path
 
         return json.dumps(log_record)

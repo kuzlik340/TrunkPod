@@ -129,7 +129,10 @@ class Handler(BaseHTTPRequestHandler):
         attacker_ip = self.client_address[0]
         attacker_port = self.client_address[1]
         logger.warning("GET request",
-            extra={"src_ip_addr": attacker_ip, "src_port": attacker_port})
+            extra={"src_ip_addr": attacker_ip, 
+                   "src_port": attacker_port, 
+                   "path": self.path
+        })
 
         if self.path.endswith(".css") and self.html_dir:
             css_path = os.path.join(self.html_dir, os.path.basename(self.path))
@@ -160,9 +163,10 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
         logger.warning(f"credential captured {data}",
-        extra={
-            "src_ip_addr": attacker_ip,
-            "src_port": attacker_port,
+            extra={
+                "src_ip_addr": attacker_ip,
+                "src_port": attacker_port,
+                "path": self.path,
         },)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
