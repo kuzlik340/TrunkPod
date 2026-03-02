@@ -22,6 +22,8 @@ fi
 
 
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr"
+run_buildah run "$ctr" mkdir -p /honeytokens
+run_buildah copy "$ctr" "$PROJECT_ROOT"/honeytokens_db/generated/tokens.json /honeytokens/
 
 for service in "${services[@]}"; do
     print_info "Copying Supervisor configs"

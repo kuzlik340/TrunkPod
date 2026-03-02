@@ -12,6 +12,7 @@ print_info "Adding ${YELLOW}HTTPS${NC} service into your $IMAGE_NAME"
 print_info "Copying python script for ${YELLOW}HTTPS${NC} service"
 run_buildah run "$ctr" mkdir -p /https
 run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/python_scripts/json_formatter.py /https/json_formatter.py
+run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/python_scripts/honeytokens.py /https/honeytokens.py
 run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/python_scripts/https_server.py /https/https_server.py
 
 print_success "${YELLOW}HTTPS${NC} service was added to $IMAGE_NAME"

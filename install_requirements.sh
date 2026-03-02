@@ -24,7 +24,29 @@ installed=0
 install_package podman
 install_package arping
 install_package yq
+install_package jq
 install_package python3
+install_package curl
+
+FIRSTNAMES="$PROJECT_ROOT/honeytokens_db/firstnames.txt"
+PASSWORDS="$PROJECT_ROOT/honeytokens_db/passwords.txt"
+
+# Create the directory if it doesn't exist yet
+mkdir -p "$PROJECT_ROOT/honeytokens_db"
+
+if [ ! -f "$FIRSTNAMES" ]; then
+    print_info "Downloading firstnames..."
+    curl -sS -o "$FIRSTNAMES" \
+        https://raw.githubusercontent.com/dominictarr/random-name/master/first-names.txt 
+fi
+
+if [ ! -f "$PASSWORDS" ]; then
+    print_info "Downloading firstnames..."
+    curl -sS -o "$PASSWORDS" \
+        https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Leaked-Databases/Lizard-Squad.txt
+fi
+
+    
 
 if [ "$installed" -eq 1 ]; then
     print_success "Tools are installed"

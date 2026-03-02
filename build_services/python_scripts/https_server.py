@@ -5,8 +5,9 @@ import os
 import time
 import logging
 import random
+from urllib.parse import parse_qs
 from json_formatter import JSONFormatter
-
+import honeytokens
 
 SERVER_PROFILES = [
     {
@@ -162,13 +163,27 @@ class Handler(BaseHTTPRequestHandler):
         attacker_port = self.client_address[1]
         length = int(self.headers.get("Content-Length", 0))
         data = self.rfile.read(length).decode()
-        logger.warning(f"credential captured {data}",
-            extra={
-                "src_ip_addr": attacker_ip,
-                "src_port": attacker_port,
-                "path": self.path,
-        },)
 
+        parsed = parse_qs(data)
+        username = parsed.get("username", [None])[0]
+        password = parsed.get("password", [None])[0]
+
+        if honeytokens.is_honeytoken(username, password):
+            key = honeytokens.get_fake_key(username, password)
+            logger.critical(f"Found honeytoken. Some machine is compromised, key: {key}, user {username}, password {password}",
+            extra={
+                    "src_ip_addr": attacker_ip,
+                    "src_port": attacker_port,
+                    "path": self.path,
+            },)
+        else:   
+            logger.warning(f"credential captured {data}",
+                extra={
+                    "src_ip_addr": attacker_ip,
+                    "src_port": attacker_port,
+                    "path": self.path,
+            },)
+        
         allowed = self.path == "/" or self.path == "/login" or (self.path.endswith(".css") and self.html_dir)
         if not allowed:
             self.send_response(403)
@@ -178,7 +193,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(b"<h1>403 Forbidden</h1>")
             return
 
-        self.send_response(200)
+        self.send_response(404)
         self.send_header("Content-type", "text/html")
         self._send_profile_headers()
         self.end_headers()
@@ -193,6 +208,7 @@ def parse_args() -> tuple[int, str, str, str, str]:
 
 
 def run():
+    honeytokens.load("/honeytokens/tokens.json")
     port, name, dst_ip = parse_args()
     certfile = "/https/cert.pem"
     keyfile = "/https/key.pem"

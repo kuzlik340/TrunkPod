@@ -11,6 +11,7 @@ import sys
 import struct
 import logging
 
+import honeytokens
 from json_formatter import JSONFormatter
 
 HOST_KEY_FILE = "/ssh/ssh_host_key"
@@ -82,15 +83,23 @@ class LoggingSSHUserAuth(userauth.SSHUserAuthServer):
             # skip "boolean change password"
             rest = rest[1:]
             password, _ = getNS(rest)
-
+            username = user.decode(errors='ignore')
+            user_password = password.decode(errors='ignore')
             peer = self.transport.transport.getPeer()
-
-            logger.warning(
-                f"Login attempt: {user.decode(errors='ignore')}:{password.decode(errors='ignore')}",
+            if honeytokens.is_honeytoken(username, user_password):
+                key = honeytokens.get_fake_key(username, user_password)
+                logger.critical(f"Found honeytoken. Some machine is compromised, key: {key}, user {username}, password {password}",
                 extra={
                     "src_ip_addr": peer.host,
                     "src_port": peer.port,
-                },
+                },)
+            else:
+                logger.warning(
+                    f"Login attempt: {username}:{user_password}",
+                    extra={
+                        "src_ip_addr": peer.host,
+                        "src_port": peer.port,
+                    },
             )
 
         return super().ssh_USERAUTH_REQUEST(packet)
@@ -230,6 +239,7 @@ def ensure_host_key():
 # =========================
 
 def main():
+    honeytokens.load("/honeytokens/tokens.json")
     port, name, dst_ip = parse_args()
 
     log_file = f"/log/ssh{port}.log"

@@ -307,6 +307,7 @@ main() {
     make_state_dir
     parse_args "$@"
     "$PROJECT_ROOT"/install_requirements.sh
+    "$PROJECT_ROOT"/generate_honeytokens.sh
     detect_changes
     check_config
     run_stages

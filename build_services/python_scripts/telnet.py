@@ -10,6 +10,7 @@ import logging
 from twisted.internet import reactor, protocol
 from twisted.conch.telnet import TelnetProtocol, TelnetTransport
 from json_formatter import JSONFormatter
+import honeytokens
 
 # ─────────────────────────────────────────────
 #  Constants
@@ -106,11 +107,21 @@ class HoneypotProtocol(TelnetProtocol):
 
     def _handle_password(self, text: str, peer):
         self.password = text
-
-        self.logger.warning(f"Login attempt: {self.username}:{self.password}", extra={
-            "src_ip_addr": peer.host,
-            "src_port"   : peer.port,
-        })
+        if honeytokens.is_honeytoken(self.username, self.password):
+            key = honeytokens.get_fake_key(self.username, self.password)
+            self.logger.critical(f"Found honeytoken. Some machine is compromised, key: {key}, user {self.username}, password {self.password}",
+            extra={
+                "src_ip_addr": peer.host,
+                "src_port": peer.port,
+            },)
+        else:
+            self.logger.warning(
+                f"Login attempt: {self.username}:{self.password}",
+                extra={
+                    "src_ip_addr": peer.host,
+                    "src_port": peer.port,
+                },
+            )
 
         reactor.callLater(AUTH_DELAY_SECONDS, self._finish_login)
 
@@ -170,6 +181,7 @@ def parse_args() -> tuple[int, str, str]:
 
 
 def main():
+    honeytokens.load("/honeytokens/tokens.json")
     port, name, dst_ip = parse_args()
     log_file = f"/log/telnet{port}.log"
 

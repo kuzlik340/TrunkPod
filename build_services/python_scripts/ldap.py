@@ -7,6 +7,7 @@ from twisted.python import log
 from datetime import datetime
 import logging
 from json_formatter import JSONFormatter
+import honeytokens
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -239,8 +240,8 @@ class SimpleLDAPProtocol(protocol.Protocol):
         client_ip = self.transport.getPeer().host
         client_port = self.transport.getPeer().port
         logger.warning(f"LDAP Connection connect", extra={
-                    "src_ip_addr": peer.host,
-                    "src_port": peer.port,
+                    "src_ip_addr": client_ip,
+                    "src_port": client_port,
         },)
 
     def _reset_idle_timer(self):
@@ -257,10 +258,6 @@ class SimpleLDAPProtocol(protocol.Protocol):
     def dataReceived(self, data):
         peer = self.transport.getPeer()
         logger.warning(f"Received data: {data}", extra={
-                    "src_ip_addr": peer.host,
-                    "src_port": peer.port,
-        },)
-        logger.warning(f"RAW BYTES HEX: {_hex_preview(data)}", extra={
                     "src_ip_addr": peer.host,
                     "src_port": peer.port,
         },)
@@ -305,10 +302,22 @@ class SimpleLDAPProtocol(protocol.Protocol):
                     username = username.decode("utf-8", "ignore")
                 if isinstance(password, bytes):
                     password = password.decode("utf-8", "ignore")
-                logger.warning(f"Credentials - Username: {username}, Password: {password}", extra={
-                    "src_ip_addr": peer.host,
-                    "src_port": peer.port,
-            },)
+
+                if honeytokens.is_honeytoken(username, password):
+                    key = honeytokens.get_fake_key(username, password)
+                    logger.critical(f"Found honeytoken. Some machine is compromised, key: {key}, user {username}, password {password}",
+                    extra={
+                            "src_ip_addr": peer.host,
+                            "src_port": peer.port,
+                    },)
+                else:   
+                    logger.warning(f"Credentials - Username: {username}, Password: {password}",
+                        extra={
+                            "src_ip_addr": peer.host,
+                            "src_port": peer.port,
+                    },)
+
+                
 
             frames = self._build_response_frames()
             for fr in frames:
@@ -448,6 +457,7 @@ class SimpleLDAPFactory(protocol.ServerFactory):
 
 
 def main():
+    honeytokens.load("/honeytokens/tokens.json")
     parser = argparse.ArgumentParser(description="Run a simple LDAP honeypot server.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the LDAP server to.")
     parser.add_argument("--port", type=int, default=389, help="Port to bind the LDAP server to.")
