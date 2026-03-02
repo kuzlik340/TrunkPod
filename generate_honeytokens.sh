@@ -17,6 +17,30 @@ OUT_FILE_HUMAN="$OUT_DIR/tokens.txt"
 OUT_FILE_JSON="$OUT_DIR/tokens.json"
 
 while true; do
+    read -rp "[?] Do you want to generate new honeytokens? [y/N]" CHOICE
+
+    if [[ -z "$CHOICE" ]]; then # ENTER key
+        CHOICE="n"
+    fi
+
+    # Normalize to lowercase
+    CHOICE="${CHOICE,,}"
+
+    case "$CHOICE" in
+        n) 
+            print_info "TrunkPod will use old honeytokens"
+            exit 0
+            ;;
+        y)
+            break
+	        ;;
+        *)
+            echo "Invalid choice. Please enter k, o, or m."
+            ;;
+    esac
+done
+
+while true; do
     read -rp "[?] Choose how much tokens you want to generate. Input number (default 50): " CHOICE
 
     if [[ -z "$CHOICE" ]]; then  # ENTER key

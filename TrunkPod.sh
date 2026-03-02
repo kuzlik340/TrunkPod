@@ -177,26 +177,35 @@ make_state_dir () {
 }
 # Create the interfaces for VLANs 
 run_stage_0 () {
-    if ! "$PROJECT_ROOT"/setup_interfaces.sh; then
-        print_error "Interface setup exited with error. Aborting configuration"
+    if ! "$PROJECT_ROOT"/generate_honeytokens.sh; then
+        print_error "Honeytoken generation failed. Aborting configuration"
         exit 1
     fi
     save_stage 1
     echo ""
 }
 
-# Check if desired honeypots IPs are free to use
 run_stage_1 () {
-    if ! "$PROJECT_ROOT"/ip_checker.sh; then
-        print_error "IP conflict detected. Please change the honeypot IP. Aborting configuration"
+    if ! "$PROJECT_ROOT"/setup_interfaces.sh; then
+        print_error "Interface setup failed. Aborting configuration"
         exit 1
     fi
     save_stage 2
     echo ""
 }
 
-# Setup pods that will be running on each VLAN
+# Check if desired honeypots IPs are free to use
 run_stage_2 () {
+    if ! "$PROJECT_ROOT"/ip_checker.sh; then
+        print_error "IP conflict detected. Please change the honeypot IP. Aborting configuration"
+        exit 1
+    fi
+    save_stage 3
+    echo ""
+}
+
+# Setup pods that will be running on each VLAN
+run_stage_3 () {
     # Grab timestamp to display journalctl command in the end prompt
     timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     "$PROJECT_ROOT"/build_services/log_file_create.sh
@@ -204,7 +213,7 @@ run_stage_2 () {
         print_error "Error while configuring pods. Aborting configuration"
         exit 1
     fi
-    save_stage 3
+    save_stage 4
     finish=1
 }
 
@@ -213,21 +222,23 @@ run_stages() {
     local current_stage
     current_stage="$(load_stage)"
     local STAGE_NAMES=(
+        "Honeytokens generation"
         "Interface setup"
         "IP validation"
         "Honeypots deployment"
     )
 
-    for stage in 0 1 2; do
+    for stage in 0 1 2 3; do
         if (( stage < current_stage )); then
             print_info "Stage $stage (${STAGE_NAMES[$stage]}) already completed. Skipping..."
             continue
         fi
 
         case "$stage" in
-            0) run_stage_0 ;;
-            1) run_stage_1 ;;
-            2) run_stage_2 ;;
+            0) print_stage "STAGE $stage: ${STAGE_NAMES[$stage]}"; run_stage_0 ;;
+            1) print_stage "STAGE $stage: ${STAGE_NAMES[$stage]}"; run_stage_1 ;;
+            2) print_stage "STAGE $stage: ${STAGE_NAMES[$stage]}"; run_stage_2 ;;
+            3) print_stage "STAGE $stage: ${STAGE_NAMES[$stage]}"; run_stage_3 ;;
             *)
                 print_error "Invalid stage: $stage"
                 exit 1
@@ -307,7 +318,6 @@ main() {
     make_state_dir
     parse_args "$@"
     "$PROJECT_ROOT"/install_requirements.sh
-    "$PROJECT_ROOT"/generate_honeytokens.sh
     detect_changes
     check_config
     run_stages

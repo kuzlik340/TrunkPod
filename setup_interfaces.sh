@@ -12,7 +12,6 @@ source "$PROJECT_ROOT"/global_functions.sh
 # Array for rollback function
 CREATED_INTERFACES=()
 
-print_stage "STAGE 0: Interface configuration"
 print_info "Configuring interfaces based on the ${BLUE}$NETWORK_CONF${NC}"
 yq_safe len '.vlans | length' "$NETWORK_CONF"
 # Function to handle rollback if error occures during setup

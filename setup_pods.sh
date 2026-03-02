@@ -16,7 +16,6 @@ rebuild_base=$1
 # Length of the honeypots.yaml
 len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
 
-print_stage "STAGE 2: Pods configuration"
 
 macvlan_moved=0             # For safe rollback, shows if the macvlan is under hosts control or already in pod
 container_running=0         # For safe rollback, shows if the pod already runs
