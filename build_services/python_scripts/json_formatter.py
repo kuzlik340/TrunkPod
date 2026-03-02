@@ -18,7 +18,7 @@ class JSONFormatter(logging.Formatter):
             "timestamp" : datetime.fromtimestamp(record.created, timezone.utc).isoformat(),
             "level"     : record.levelname,
             "logger"    : record.name,
-            "service"   : "HoneyBridge",
+            "service"   : "TrunkPod",
             "component" : self.service,
             "message"   : record.getMessage(),
             "dst_ip_addr": self.dst_ip,

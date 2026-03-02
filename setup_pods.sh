@@ -10,7 +10,7 @@ set -Eeuo pipefail
 
 source "$PROJECT_ROOT"/global_functions.sh
 
-STATE_FILE_PODS="/run/honeybridge.d/honeybridge_pods_stage"
+STATE_FILE_PODS="/run/trunkpod.d/trunkpod_pods_stage"
 # The directory with all services that could be bundled into honeypot
 rebuild_base=$1
 # Length of the honeypots.yaml

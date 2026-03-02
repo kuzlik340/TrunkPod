@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HoneyBridge - Telnet Honeypot
+TrunkPod - Telnet Honeypot
 Mimics a real Linux telnetd to capture attacker credentials and commands.
 """
 
@@ -179,7 +179,7 @@ def main():
     factory = HoneypotFactory(logger)
     reactor.listenTCP(port, factory)
 
-    print(f"Nothing to see here. All logs are accessible on host in /var/log/honeybridge, thank me later :)")
+    print(f"Nothing to see here. All logs are accessible on host in /var/log/trunkpod, thank me later :)")
 
     reactor.run()
 

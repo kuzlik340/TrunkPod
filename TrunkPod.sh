@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================
-# HoneyBridge: Honeypot Deployment Orchestrator.  |
+# TrunkPod: Honeypot Deployment Orchestrator.  |
 # Controls staged setup, pod creation, interface. |
 # management, service configuration, and recovery.|
 # =================================================
@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR"/set_project_root.sh
 source "$PROJECT_ROOT"/global_functions.sh
 
-LOGO_DIR="$PROJECT_ROOT"/assets/logos # Directory with the logos of the HoneyBridge project   
+LOGO_DIR="$PROJECT_ROOT"/assets/logos # Directory with the logos of the TrunkPod project   
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
 rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
 
@@ -40,7 +40,7 @@ clean() {
     print_info "Resetting setup state..."
     rm -f "$STATE_FILE"
     rm -f "$STATE_FILE_PODS"
-    rm -f "$PROJECT_ROOT"/build_services/honeybridge_build_current.log
+    rm -f "$PROJECT_ROOT"/build_services/trunkpod_build_current.log
     print_success "State reset to 0"
     podman ps -q | xargs -r podman stop -t 0 >/dev/null 2>&1
     podman ps -aq | xargs -r podman rm >/dev/null 2>&1
@@ -51,7 +51,7 @@ clean() {
 clean_silent() {
     rm -f "$STATE_FILE"
     rm -f "$STATE_FILE_PODS"
-    rm -f "$PROJECT_ROOT"/build_services/honeybridge_build_current.log
+    rm -f "$PROJECT_ROOT"/build_services/trunkpod_build_current.log
     podman rm -f -a > /dev/null
 }
 
@@ -66,8 +66,8 @@ require_root () {
 # Clean build logs
 clean_build_logs () {
     print_info "Cleaning build logs..."
-    rm -f /var/log/honeybridge_build*
-    print_success "Honeybridge build logs are ${GREEN}succesfully${NC} cleaned"
+    rm -f /var/log/trunkpod_build*
+    print_success "TrunkPod build logs are ${GREEN}succesfully${NC} cleaned"
 }
 
 clean_honeypot_logs () {
@@ -97,7 +97,7 @@ clean_honeypot_logs () {
     done
     clean
     print_info "Cleaning honeypot logs..."
-    rm -rf /var/log/honeybridge/
+    rm -rf /var/log/trunkpod/
     print_success "Honeypot logs are ${GREEN}succesfully${NC} cleaned"
 }
 
@@ -138,7 +138,7 @@ mark_base_for_rebuild () {
 
 # If there are missing files
 fatal_installation_error () {
-    print_error "Probably your installation is corrupted or there are no files in ${BLUE}configs/${NC}. Please reinstall HoneyBridge."
+    print_error "Probably your installation is corrupted or there are no files in ${BLUE}configs/${NC}. Please reinstall TrunkPod."
     exit 1
 }
 
@@ -261,7 +261,7 @@ show_banner () {
     echo -e "\n"
     cat "$random_logo"
     echo -e "\n"
-    echo "HoneyBridge — Honeypot Management Toolkit"
+    echo "TrunkPod — Honeypot Management Toolkit"
     echo ""
 }
 
@@ -271,14 +271,14 @@ show_quote () {
         echo ""
         random_quote=$(shuf -n 1 "$PROJECT_ROOT"/assets/quotes.txt)
         echo -e "The configuration is done. $random_quote :)"
-        echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/honeybridge/${NC}"
+        echo -e "Logs of honeypots themselves could be seen in ${BLUE}/var/log/trunkpod/${NC}"
     fi
 }
 
 show_help() {
     cat <<'EOF'
 Usage:
-  sudo ./HoneyBridge [OPTIONS]
+  sudo ./TrunkPod [OPTIONS]
 
 Options:
   --help                  Show this help message and exit
@@ -287,14 +287,14 @@ Options:
   --clean-honeypot-logs   Delete all honeypot produced logs
   --force-rebuild-base    Rebuilds the base image forcefully
 Behavior:
-  If no options are provided, HoneyBridge reads configuration files from the
+  If no options are provided, TrunkPod reads configuration files from the
   'configs/' directory and deploys honeypots according to the configuration.
 
 Examples:
-  sudo ./HoneyBridge
-  sudo ./HoneyBridge --clean
-  sudo ./HoneyBridge --clean-build-logs
-  sudo ./Honeybridge --force-rebuild-base
+  sudo ./TrunkPod
+  sudo ./TrunkPod --clean
+  sudo ./TrunkPod --clean-build-logs
+  sudo ./TrunkPod --force-rebuild-base
 
 Notice! The program won't start until run with sudo. Program accepts only one flag each run.
 EOF

@@ -13,5 +13,6 @@ print_info "Copying python script for ${YELLOW}HTTP${NC} service"
 run_buildah run "$ctr" mkdir -p /http
 run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/python_scripts/json_formatter.py /http/json_formatter.py
 run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/python_scripts/http_server.py /http/http_server.py
+run_buildah copy "$ctr" "$PROJECT_ROOT"/build_services/assets/ /http/assets
 
 print_success "${YELLOW}HTTP${NC} service was added to $IMAGE_NAME"

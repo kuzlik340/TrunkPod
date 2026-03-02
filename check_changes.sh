@@ -14,7 +14,7 @@ set -euo pipefail
 
 source "$PROJECT_ROOT"/global_functions.sh
 
-HASH_FILE=/run/honeybridge.d/hashes.txt
+HASH_FILE=/run/trunkpod.d/hashes.txt
 TMP_FILE=$(mktemp)
 
 

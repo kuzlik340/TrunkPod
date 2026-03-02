@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p /var/log/honeybridge/"$1"
+mkdir -p /var/log/trunkpod/"$1"
 
 podman run -d --name "$1" \
   --replace \
@@ -12,6 +12,6 @@ podman run -d --name "$1" \
   --tmpfs /tmp:rw,size=64m \
   --tmpfs /run:rw,size=16m \
   --tmpfs /var/log:rw,size=64m \
-  -v /var/log/honeybridge/"$1":/log:rw \
+  -v /var/log/trunkpod/"$1":/log:rw \
   --pids-limit 50 \
   "$1":latest

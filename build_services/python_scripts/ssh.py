@@ -213,7 +213,7 @@ def ensure_host_key():
     from cryptography.hazmat.primitives import serialization
 
     logger.info("Generating SSH host key")
-    print("[HoneyBridge] Generating SSH host key...")
+    print("[TrunkPod] Generating SSH host key...")
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     os.makedirs(os.path.dirname(HOST_KEY_FILE), exist_ok=True)

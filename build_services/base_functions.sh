@@ -1,5 +1,5 @@
 
-logfile="$PROJECT_ROOT"/build_services/honeybridge_build_current.log
+logfile="$PROJECT_ROOT"/build_services/trunkpod_build_current.log
 
 source "$PROJECT_ROOT"/global_functions.sh
 
