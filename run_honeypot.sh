@@ -2,16 +2,29 @@
 
 mkdir -p /var/log/trunkpod/"$1"
 
-podman run -d --name "$1" \
-  --replace \
+# podman run -d --name "$1" \
+#   --replace \
+#   --log-driver=k8s-file \
+#   --hostname debian \
+#   --security-opt no-new-privileges \
+#   --network none \
+#   --tmpfs /var/log:rw,size=64m \
+#   -v /var/log/trunkpod/"$1":/log:rw \
+#   --pids-limit 50 \
+#   "$1":latest
+
+podman run -d --name "$1" --replace \
   --log-driver=k8s-file \
   --hostname debian \
   --security-opt no-new-privileges \
+  --cap-drop=all \
+  --cap-add=NET_BIND_SERVICE \
   --network none \
-  --tmpfs /app:rw,size=16m \
-  --tmpfs /tmp:rw,size=64m \
+  -v /var/log/trunkpod/"$1":/log:rw \
+  --read-only=false \
+  --tmpfs /tmp:rw,size=16m \
   --tmpfs /run:rw,size=16m \
   --tmpfs /var/log:rw,size=64m \
-  -v /var/log/trunkpod/"$1":/log:rw \
+  --tmpfs /services:rw,size=16m \
   --pids-limit 50 \
   "$1":latest
