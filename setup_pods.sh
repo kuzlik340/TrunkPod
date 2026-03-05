@@ -91,7 +91,7 @@ prepare_supervisor_configs () {
 
 setup_macvlan_for_container () {
     print_info "Creating macvlan interface: macvlan_temp for $honeypot_name"
-    ip link add macvlan_temp link eth0."$honeypot_vlan_id" type macvlan mode bridge
+    ip link add macvlan_temp link eth0."$honeypot_vlan_id" type macvlan mode private
     ip link set macvlan_temp address "$honeypot_mac_addr"
     print_success "Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 }
