@@ -14,7 +14,7 @@ import logging
 import honeytokens
 from json_formatter import JSONFormatter
 
-HOST_KEY_FILE = "/ssh/ssh_host_key"
+HOST_KEY_FILE = "/services/ssh/ssh_host_key"
 AUTH_DELAY_SECONDS = 4   # To make brute-foce for client slow as hell 
 
 # =========================

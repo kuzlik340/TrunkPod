@@ -210,8 +210,8 @@ def parse_args() -> tuple[int, str, str, str, str]:
 def run():
     honeytokens.load("/honeytokens/tokens.json")
     port, name, dst_ip = parse_args()
-    certfile = "/https/cert.pem"
-    keyfile = "/https/key.pem"
+    certfile = "/services/https/cert.pem"
+    keyfile = "/services/https/key.pem"
     log_file = f"/log/https_server{port}.log"
     global logger
     logger = build_logger(name, log_file, dst_ip, port)
