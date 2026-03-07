@@ -110,8 +110,8 @@ clean_honeypot_logs () {
 # Drop a stage when rebuild base image should be done
 downgrade_stage_if_needed () {
     stage=$(load_stage)
-    if [[ $stage -eq 3 ]]; then # Drop stage to rebuilt base_image and honeypots
-        save_stage 2
+    if [[ $stage -eq 4 ]]; then # Drop stage to rebuilt base_image and honeypots
+        save_stage 3
     fi
 }
 
