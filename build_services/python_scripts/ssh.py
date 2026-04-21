@@ -13,13 +13,21 @@ import logging
 
 import honeytokens
 from json_formatter import JSONFormatter
-
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
 HOST_KEY_FILE = "/services/ssh/ssh_host_key"
 AUTH_DELAY_SECONDS = 0  # To make brute-foce for client slow as hell 
 
 # =========================
 # Configuration
 # =========================
+
+def generate_in_memory_key():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
+    return keys.Key(private_key)
 
 def build_logger(name: str, log_file: str, dst_ip: str, dst_port: int) -> logging.Logger:
     logger = logging.getLogger(name)
@@ -199,24 +207,24 @@ class FakeSSHFactory(factory.SSHFactory):
         b'ssh-userauth': LoggingSSHUserAuth,
         b'ssh-connection': connection.SSHConnection,
     }
+
     def __init__(self):
         self.portal = portal.Portal(FakeRealm())
         self.portal.registerChecker(RejectAllPasswords())
+        self._key = generate_in_memory_key()
 
     def getPublicKeys(self):
-        key = keys.Key.fromFile(HOST_KEY_FILE)
         return {
-            b"ssh-rsa": key.public(),
-            b"rsa-sha2-256": key.public(),
-            b"rsa-sha2-512": key.public(),
+            b"ssh-rsa": self._key.public(),
+            b"rsa-sha2-256": self._key.public(),
+            b"rsa-sha2-512": self._key.public(),
         }
 
     def getPrivateKeys(self):
-        key = keys.Key.fromFile(HOST_KEY_FILE)
         return {
-            b"ssh-rsa": key,
-            b"rsa-sha2-256": key,
-            b"rsa-sha2-512": key,
+            b"ssh-rsa": self._key,
+            b"rsa-sha2-256": self._key,
+            b"rsa-sha2-512": self._key,
         }
 
 def parse_args() -> tuple[int, str, str]:
@@ -230,21 +238,7 @@ def ensure_host_key():
     if os.path.exists(HOST_KEY_FILE):
         return
 
-    from cryptography.hazmat.primitives.asymmetric import rsa
-    from cryptography.hazmat.primitives import serialization
 
-    logger.info("Generating SSH host key")
-    print("[TrunkPod] Generating SSH host key...")
-
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    os.makedirs(os.path.dirname(HOST_KEY_FILE), exist_ok=True)
-
-    with open(HOST_KEY_FILE, "wb") as f:
-        f.write(key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        ))
 
 # =========================
 # Start Server
