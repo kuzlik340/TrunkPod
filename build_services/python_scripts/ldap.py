@@ -151,24 +151,19 @@ def _ber_encode_set(items: list) -> bytes:
 
 def _ber_encode_application(app_tag: int, encoded_components: list) -> bytes:
     payload = b"".join(encoded_components)
-    return bytes([app_tag]) + _ber_encode_len(len(payload)) + payload
-
+    result = bytes([app_tag]) + _ber_encode_len(len(payload)) + payload
+    return result
 
 def _ldap_message(msgid: int, protocol_op_tlv: bytes) -> bytes:
     return _ber_encode_sequence([_ber_encode_integer(msgid), protocol_op_tlv])
 
 
 def _encode_bind_response(msgid: int, code: int, matched_dn: str = "", diag: str = "") -> bytes:
-    op = _ber_encode_application(
-        0x61,
-        [
-            _ber_encode_enumerated(code),
-            _ber_encode_octet_string((matched_dn or "").encode("utf-8", "ignore")),
-            _ber_encode_octet_string((diag or "").encode("utf-8", "ignore")),
-        ],
-    )
+    a = _ber_encode_enumerated(code)
+    b = _ber_encode_octet_string((matched_dn or "").encode("utf-8", "ignore"))
+    c = _ber_encode_octet_string((diag or "").encode("utf-8", "ignore"))
+    op = _ber_encode_application(0x61, [a, b, c])
     return _ldap_message(msgid, op)
-
 
 def _encode_search_result_done(msgid: int, code: int, matched_dn: str = "", diag: str = "") -> bytes:
     op = _ber_encode_application(
@@ -235,8 +230,9 @@ class SimpleLDAPProtocol(protocol.Protocol):
         self._last_op_tag = None
         self._last_req_name = ""
         self._last_search_is_rootdse = False
+        self._last_bind_dn = b""   # add this
+        self._last_bind_pw = b""   # add this
         self._reset_idle_timer()
-
         client_ip = self.transport.getPeer().host
         client_port = self.transport.getPeer().port
         logger.warning(f"LDAP Connection connect", extra={
@@ -325,10 +321,10 @@ class SimpleLDAPProtocol(protocol.Protocol):
                     self.transport.write(fr)
 
             if self._last_op_tag == 0x42:
-                with suppress(Exception):
-                    self.transport.loseConnection()
-                return
-
+                self._last_op_tag = None
+                self._last_msgid = 1
+                self._reset_idle_timer()
+                continue
             if not self._buf:
                 return
 
@@ -394,11 +390,15 @@ class SimpleLDAPProtocol(protocol.Protocol):
         }
 
     def _build_response_frames(self) -> list:
-        msgid = int(getattr(self, "_last_msgid", 1) or 1)
+        msgid = int(getattr(self, "_last_msgid", 1) or 1) & 0x7FFFFFFF
         op = getattr(self, "_last_op_tag", None)
 
         if op == 0x60:
-            return [_encode_bind_response(msgid, LDAP_RESULT_SUCCESS, "", "")]
+            dn = getattr(self, "_last_bind_dn", b"")
+            pw = getattr(self, "_last_bind_pw", b"")
+            if dn == b"" and pw == b"":
+                return [_encode_bind_response(msgid, LDAP_RESULT_SUCCESS, "", "")]
+            return [_encode_bind_response(msgid, LDAP_RESULT_INVALID_CREDENTIALS, "", "invalidCredentials")]
         if op == 0x63:
             if bool(getattr(self, "_last_search_is_rootdse", False)):
                 entry = _encode_search_result_entry(msgid, "", self._build_rootdse_attrs())
@@ -423,7 +423,7 @@ class SimpleLDAPProtocol(protocol.Protocol):
 
         with suppress(Exception):
             msgid, op_tag, op_val = self._decode_ldap_message(data)
-            self._last_msgid = int(msgid)
+            self._last_msgid = msgid & 0x7FFFFFFF
             self._last_op_tag = int(op_tag)
 
             if op_tag == 0x60:
@@ -434,8 +434,12 @@ class SimpleLDAPProtocol(protocol.Protocol):
                 tag, _, _, v0, v1 = _ber_read_tlv(op_val, off)
                 if tag == 0x80:
                     password = op_val[v0:v1]
+                else:
+                    password = b""
+                # Store for _build_response_frames
+                self._last_bind_dn = dn_b
+                self._last_bind_pw = password
                 return username, password
-
             if op_tag == 0x63:
                 off = 0
                 base_b, off = _decode_octet_string(op_val, off)

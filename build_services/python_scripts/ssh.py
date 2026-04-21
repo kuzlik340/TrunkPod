@@ -15,7 +15,7 @@ import honeytokens
 from json_formatter import JSONFormatter
 
 HOST_KEY_FILE = "/services/ssh/ssh_host_key"
-AUTH_DELAY_SECONDS = 4   # To make brute-foce for client slow as hell 
+AUTH_DELAY_SECONDS = 0  # To make brute-foce for client slow as hell 
 
 # =========================
 # Configuration
@@ -132,7 +132,19 @@ class LoggingSSHTransport(SSHServerTransport):
         )
         self.ourVersionString = b"SSH-2.0-OpenSSH_8.9p1 Debian-1"
         super().connectionMade()
+    
+    def connectionLost(self, reason=None):   
+        peer = getattr(self, "peer", None)
 
+        logger.warning(
+            f"SSH Connection Lost",
+            extra={
+                "src_ip_addr": peer.host if peer else None,
+                "src_port": peer.port if peer else None,
+            }
+        )
+
+        super().connectionLost()
 
     def ssh_KEXINIT(self, packet):
         # packet format:
