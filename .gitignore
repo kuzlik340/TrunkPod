@@ -1,3 +1,4 @@
 build_services/trunkpod_build_current.log
-configs/
+configs/honeypots.yaml
+configs/network.yaml
 honeytokens_db/

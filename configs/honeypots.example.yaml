@@ -1,0 +1,26 @@
+honeypots:
+  - name: honeypot1
+    ip: 192.168.20.60    
+    vlan: 20
+    services:
+      - name: ldap
+        port: 389
+      - name: ssh
+        port: 22
+    mac: B8:2A:72:EF:00:01
+
+  - name: honeypot2
+    ip: 192.168.30.70   
+    vlan: 30
+    services:
+      - name: ldap
+        port: 389
+      - name: ssh
+        port: 22
+      - name: http_server
+        port: 80
+      - name: https_server
+        port: 443
+      - name: telnet
+        port: 23
+    mac: B8:2A:72:EF:00:02

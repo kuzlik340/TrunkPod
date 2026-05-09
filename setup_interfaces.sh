@@ -14,6 +14,7 @@ CREATED_INTERFACES=()
 
 print_info "Configuring interfaces based on the ${BLUE}$NETWORK_CONF${NC}"
 yq_safe len '.vlans | length' "$NETWORK_CONF"
+interface=$1
 # Function to handle rollback if error occures during setup
 rollback() {
     print_error "Error occurred while interface configuration"
@@ -56,7 +57,7 @@ done
 for i in $(seq 0 $((len - 1))); do
     # Reading configuration
     yq_safe vlan_id -r ".vlans[$i].id" "$NETWORK_CONF"
-    iface="eth0.$vlan_id"
+    iface="$interface"".$vlan_id"
     
     # Check if interface already exists
     if ip link show "$iface" &>/dev/null; then
@@ -90,11 +91,11 @@ for i in $(seq 0 $((len - 1))); do
 
     print_info "Creating $iface (VLAN $vlan_id)..."
 
-    ip link add link eth0 name eth0."$vlan_id" type vlan id "$vlan_id"
+    ip link add link "$interface" name "$interface"."$vlan_id" type vlan id "$vlan_id"
     # Add into array for safe rollback if error occurs
     CREATED_INTERFACES+=("$iface")
-    ip link set eth0."$vlan_id" up
-    ip link set eth0."$vlan_id" promisc on
+    ip link set "$interface"."$vlan_id" up
+    ip link set "$interface"."$vlan_id" promisc on
     if ! ip link show "$iface" | grep -q "state UP"; then
         print_error "$iface failed to come UP"
         exit 1

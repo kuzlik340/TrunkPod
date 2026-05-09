@@ -15,7 +15,7 @@ STATE_FILE_PODS="/run/trunkpod.d/trunkpod_pods_stage"
 rebuild_base=$1
 # Length of the honeypots.yaml
 len=$(yq '.honeypots | length' "$HONEYPOT_CONF")
-
+interface=$2
 
 macvlan_moved=0             # For safe rollback, shows if the macvlan is under hosts control or already in pod
 container_running=0         # For safe rollback, shows if the pod already runs
@@ -91,7 +91,7 @@ prepare_supervisor_configs () {
 
 setup_macvlan_for_container () {
     print_info "Creating macvlan interface: macvlan_temp for $honeypot_name"
-    ip link add macvlan_temp link eth0."$honeypot_vlan_id" type macvlan mode private
+    ip link add macvlan_temp link "$interface"."$honeypot_vlan_id" type macvlan mode private
     ip link set macvlan_temp address "$honeypot_mac_addr"
     print_success "Created macvlan_temp with honeypot MAC $honeypot_mac_addr"
 }

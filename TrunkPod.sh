@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =================================================
-# TrunkPod: Honeypot Deployment Orchestrator.  |
+# TrunkPod: Honeypot Deployment Orchestrator.     |
 # Controls staged setup, pod creation, interface. |
 # management, service configuration, and recovery.|
 # =================================================
@@ -15,7 +15,7 @@ source "$PROJECT_ROOT"/global_functions.sh
 LOGO_DIR="$PROJECT_ROOT"/assets/logos # Directory with the logos of the TrunkPod project   
 finish=0 # Variable to check if the script was working and then finished to print the end of configuration statement
 rebuild_base=0 # Variable to check if base_image script is changed (build_services/build_base.sh)
-
+interface="eth0"
 
 # =================================== FUNCTIONS =========================================
 
@@ -186,7 +186,7 @@ run_stage_0 () {
 }
 
 run_stage_1 () {
-    if ! "$PROJECT_ROOT"/setup_interfaces.sh; then
+    if ! "$PROJECT_ROOT"/setup_interfaces.sh "$interface"; then
         print_error "Interface setup failed. Aborting configuration"
         exit 1
     fi
@@ -196,7 +196,7 @@ run_stage_1 () {
 
 # Check if desired honeypots IPs are free to use
 run_stage_2 () {
-    if ! "$PROJECT_ROOT"/ip_checker.sh; then
+    if ! "$PROJECT_ROOT"/ip_checker.sh "$interface"; then
         print_error "IP conflict detected. Please change the honeypot IP. Aborting configuration"
         exit 1
     fi
@@ -209,7 +209,7 @@ run_stage_3 () {
     # Grab timestamp to display journalctl command in the end prompt
     timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     "$PROJECT_ROOT"/build_services/log_file_create.sh
-    if ! "$PROJECT_ROOT"/setup_pods.sh $rebuild_base; then
+    if ! "$PROJECT_ROOT"/setup_pods.sh $rebuild_base "$interface"; then
         print_error "Error while configuring pods. Aborting configuration"
         exit 1
     fi
@@ -252,18 +252,52 @@ run_stages() {
 # Function to parse passed arguments
 parse_args() {
     rebuild_base=0
-    case "${1:-}" in
-        --help) show_help; exit 0 ;;
-        --clean) clean; exit 0 ;;
-        --clean-build-logs) clean_build_logs; exit 0 ;;
-        --clean-honeypot-logs) clean_honeypot_logs; exit 0 ;;
-        --force-rebuild-base)
-            rebuild_base=1
-            downgrade_stage_if_needed
-            ;;
-        "") ;;
-        *) print_error "Unknown option: $1"; echo "Use --help for usage info." ; exit 1 ;;
-    esac
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --help)
+                show_help
+                exit 0
+                ;;
+            --clean)
+                clean
+                shift
+                [[ $# -eq 0 ]] && exit 0
+                ;;
+            --clean-build-logs)
+                clean_build_logs
+                shift
+                [[ $# -eq 0 ]] && exit 0
+                ;;
+            --clean-honeypot-logs)
+                clean_honeypot_logs
+                shift
+                [[ $# -eq 0 ]] && exit 0
+                ;;
+            --interface)
+                if [[ -z "${2:-}" || "$2" == --* ]]; then
+                    print_error "--interface requires a value"
+                    exit 1
+                fi
+
+                interface="$2"
+                shift 2
+                ;;
+            --force-rebuild-base)
+                rebuild_base=1
+                downgrade_stage_if_needed
+                shift
+                ;;
+            "")
+                shift
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                echo "Use --help for usage info."
+                exit 1
+                ;;
+        esac
+    done
 }
 
 show_banner () {
@@ -297,17 +331,19 @@ Options:
   --clean-build-logs      Delete all build logs. Honeypot produced logs are still accesible in journalctl
   --clean-honeypot-logs   Delete all honeypot produced logs
   --force-rebuild-base    Rebuilds the base image forcefully
+  --interface             Selects the interface on which TrunkPod will be deployed
 Behavior:
   If no options are provided, TrunkPod reads configuration files from the
-  'configs/' directory and deploys honeypots according to the configuration.
+  'configs/' directory and deploys honeypots according to the configuration
+  using the default eth0 interface.
 
 Examples:
-  sudo ./TrunkPod
+  sudo ./TrunkPod --interface eth0
   sudo ./TrunkPod --clean
   sudo ./TrunkPod --clean-build-logs
-  sudo ./TrunkPod --force-rebuild-base
+  sudo ./TrunkPod --force-rebuild-base --interface eth0
 
-Notice! The program won't start until run with sudo. Program accepts only one flag each run.
+Notice! The program won't start until run from root.
 EOF
 }
 
@@ -325,57 +361,3 @@ main() {
 }
 
 main "$@"
-
-
-#================================================ 1 STAGE ===============================================
-#TODO make the clean flags do what they are supposed to do not megaclean                                                                DONE                                                                                           
-#TODO add errors handler in the build_services                                                                                          DONE                                                                            
-#TODO what if exit 1 in builder chain                                                                                                   DONE
-#TODO fix logs (Only errors to shell, other things to log file)                                                                         DONE
-#TODO every start new log file                                                                                                          DONE
-#TODO --clean-logs to clean all logs                                                                                                    DONE                                                                                          
-#TODO do not rebuild base image if hash is still same                                                                                   DONE                                                                                                         
-#TODO refactor                                                                                                                          DONE
-#TODO check for || true                                                                                                                 DONE                                                                                                  
-#TODO check changes in yamls and base_image via hashes                                                                                  DONE
-#TODO JSON parser / CLI (Example docker-compose -> yaml)                                                                                DONE
-#TODO IP checker in use                                                                                                                 DONE
-#TODO make every IPTABLE entry perfect with the interfaces and other things                                                             DONE
-#TODO create a directory with honeypots                                                                                                 DONE
-#TODO deletion of interfaces if misocnfigured LIKE TRANSACTION COMMIT                                                                   DONE
-#TODO many services on one virtual device (2 HTTP servers 80 port and 4000 port)                                                        DONE
-#TODO add dockerfile_builder and entrypoint_builder                                                                                     DONE
-#TODO check PID 1 in all containers                                                                                                     DONE
-#TODO add build stage before running every container and parser for list of services                                                    DONE
-
-#================================================ 2 STAGE ===============================================
-#TODO shellcheck everywhere                                                                                                             DONE
-#TODO 2-3 services (Simple HTTP server, LDAP, SSH, TELNET). PORT THAT SENDS BANNER (SSH BANNER) SIMPLE SCRIPTS.                         DONE
-#TODO everytime new logs or somehow save old directory?                                                                                 DONE
-#TODO Log in one file, also with tcpdump or smth like that                                                                              DONE
-#TODO log into one file from nftablesODO create in logging commit transaction so won't be "HonHoneypot2 Null_scaneypot1 SYN scan"       DONE  
-#TODO Enable yaml conf checker
-
-
-#================================================ 3 STAGE ===============================================
-#TODO LOGS ENTIRELY NETFLOWS Telescope
-#TODO PORTS CLOSED RST SYNACK NOT REPLY
-#TODO: make the --info flag to see the containers that are running and what services are there (real info via exec ip a)
-#TODO NETWORK TELESCOPE (OTHER PACKETS that are not for honeypots we have to log)(SNORT or SURICATA)
-#TODO EVERYTHING THAT GOES NOT TO CONTAINERS IP WE HAVE TO SEE IT AND LOG (stealth scan TCP:SYN) SOMETHING LIKE IDS
-
-#================================================ 4 STAGE ===============================================
-#TODO CAPABLITIES on the podman 
-#TODO map user and run without sudo
-#TODO secure web page
-#TODO some pentests (Metasploit and others), lateral movement check
-#TODO Mitre ATT&CK 
-#TODO Same services on different ports on one honeypot
-
-#================================================ Features ===============================================
-#TODO MAC generator based on vendor (Probably will not be done)
-#TODO change IP while running
-#TODO multi-core to optimize time (TOUGH)
-#TODO sudo only where it is has to be (TOUGH)
-#TODO ssh twisted python                                                                                                                DONE
-#TODO services same services on diff ports                                                                                              DONE

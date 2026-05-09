@@ -17,7 +17,7 @@ ctr=$(buildah from debian:stable-slim)
 run_buildah config --env DEBIAN_FRONTEND=noninteractive "$ctr" 
 #TODO  WHY works only with rc=
 print_info "Running update of base image. This will take some time..." 
-run_buildah run "$ctr" -- bash -c "
+run_buildah run --network host "$ctr" -- bash -c "
     apt-get update &&
     apt-get install -y --no-install-recommends \
         bash ca-certificates supervisor \
@@ -26,7 +26,7 @@ run_buildah run "$ctr" -- bash -c "
         && apt-get clean && rm -rf /var/lib/apt/lists/*
 "
 run_buildah run "$ctr" virtualenv try-twisted
-run_buildah run "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
+run_buildah run --network host "$ctr" /try-twisted/bin/pip install twisted[all] bcrypt cryptography
 if podman image exists localhost/honeypot-base:latest; then
     podman image rm -f localhost/honeypot-base:latest > /dev/null
 fi

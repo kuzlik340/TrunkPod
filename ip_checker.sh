@@ -13,6 +13,7 @@ print_info "Checking if desired IPs for honeypots are already in use. This will 
 rc=0
 yq_safe len '.honeypots | length' "$HONEYPOT_CONF"
 
+interface=$1
 for i in $(seq 0 $((len - 1))); do
     # Read from .yaml config
     yq_safe honeypot_ip_addr -r ".honeypots[$i].ip" "$HONEYPOT_CONF" 
@@ -20,7 +21,7 @@ for i in $(seq 0 $((len - 1))); do
     yq_safe honeypot_name -r ".honeypots[$i].name" "$HONEYPOT_CONF"
 
     # Check IPs via arping
-    if arping -c 10 -w 1 -I  eth0."$honeypot_vlan_id" -S "$honeypot_ip_addr" "$honeypot_ip_addr" > /dev/null; then # Using same IP for source and destination since eth0 does not have its own IP
+    if arping -c 10 -w 1 -I  "$interface"."$honeypot_vlan_id" -S "$honeypot_ip_addr" "$honeypot_ip_addr" > /dev/null; then # Using same IP for source and destination since interface does not have its own IP
         print_error "IP ${RED}$honeypot_ip_addr${NC} for $honeypot_name on VLAN:$honeypot_vlan_id is ${RED}already in use${NC}. Please change it in the config"
         rc=1
     else

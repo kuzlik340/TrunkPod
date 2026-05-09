@@ -41,7 +41,7 @@ if [ ! -f "$FIRSTNAMES" ]; then
 fi
 
 if [ ! -f "$PASSWORDS" ]; then
-    print_info "Downloading firstnames..."
+    print_info "Downloading passwords..."
     curl -sS -o "$PASSWORDS" \
         https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Leaked-Databases/Lizard-Squad.txt
 fi

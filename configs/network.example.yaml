@@ -1,0 +1,10 @@
+vlans:
+  - id: 20
+    name: network1
+    range: 192.168.20.0/24
+    gateway: 192.168.20.1
+
+  - id: 30
+    name: network2
+    range: 192.168.30.0/24
+    gateway: 192.168.30.1

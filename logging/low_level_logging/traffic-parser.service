@@ -1,0 +1,28 @@
+[Unit]
+Description=Packet Capture Logger (traffic_parser)
+After=network.target
+
+[Service]
+Type=simple
+
+# Run as root (required for raw sockets)
+User=root
+
+# Optional: restrict capabilities instead of full root (see below)
+# CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+# AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+
+ExecStart=/usr/local/bin/traffic_parser eth0
+
+Restart=always
+RestartSec=3
+
+# Ensure logs directory exists
+WorkingDirectory=/var/log/traffic_parser
+
+# Hardening (optional but recommended)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

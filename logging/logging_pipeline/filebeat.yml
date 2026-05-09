@@ -1,0 +1,87 @@
+filebeat.inputs:
+  - type: filestream
+    id: honeypots
+    enabled: true
+    paths:
+      - "/var/log/trunkpod/*/*.log"
+    prospector.scanner.check_interval: 1s
+    close.on_state_change.renamed: true
+    fields_under_root: true
+    fields:
+      shipper_id: "honeypots"
+    parsers:
+      - ndjson:
+          target: ""
+          add_error_key: true
+
+  - type: filestream
+    id: tshark-fields
+    enabled: true
+    paths:
+      - "/var/log/traffic_parser/out.log*"
+    close.on_rotation: false
+    ignore_older: 168h
+    clean_inactive: 0
+    file_identity.native: ~
+    close.inactive: 30m
+    prospector.scanner.check_interval: 1s
+    #close.on_state_change.renamed: true
+    fields_under_root: true
+    fields:
+      shipper_id: "tshark-fields"
+      event.dataset: "trunkpod.packets"
+      observer.type: "trunkpod"
+
+    processors:
+      - dissect:
+          tokenizer: "%{frame.time_epoch}|%{frame.len}|%{eth.src}|%{eth.dst}|%{eth.type}|%{vlan.id}|%{vlan.etype}|%{ip.src}|%{ip.dst}|%{ip.proto}|%{tcp.srcport}|%{tcp.dstport}|%{tcp.flags}|%{udp.srcport}|%{udp.dstport}|%{icmp.type}|%{icmp.code}|%{arp.opcode}|%{arp.src.hw_mac}|%{arp.src.proto_ipv4}|%{arp.dst.hw_mac}|%{arp.dst.proto_ipv4}"
+          field: message
+          target_prefix: ""
+          ignore_failure: false
+
+      - convert:
+          fields:
+            - {from: "frame.len",     to: "frame.len",     type: integer}
+            - {from: "ip.proto",      to: "ip.proto",      type: integer}
+            - {from: "tcp.srcport",   to: "tcp.srcport",   type: integer}
+            - {from: "tcp.dstport",   to: "tcp.dstport",   type: integer}
+            - {from: "udp.srcport",   to: "udp.srcport",   type: integer}
+            - {from: "udp.dstport",   to: "udp.dstport",   type: integer}
+            - {from: "icmp.type",     to: "icmp.type",     type: integer}
+            - {from: "icmp.code",     to: "icmp.code",     type: integer}
+            - {from: "arp.opcode",    to: "arp.opcode",    type: integer}
+            - {from: "vlan.id",       to: "vlan.id",       type: integer}
+          ignore_missing: true
+          fail_on_error: false
+
+      - timestamp:
+          field: frame.time_epoch
+          target_field: "@timestamp"
+          layouts:
+            - UNIX
+          ignore_failure: false
+
+      - drop_fields:
+          fields: ["message"]
+          ignore_missing: true
+
+setup.ilm.enabled: false
+setup.template.enabled: false
+
+logging.to_files: false
+logging.to_stderr: true
+logging.level: info
+
+output.elasticsearch:
+  hosts: ["${ELASTICHOST}:9200"]
+  password: "${ELASTICPASS}"
+  username: "${ELASTICUSER}"
+  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
+  indices:
+    - index: "trunkpod-honeypots-%{+yyyy.MM.dd}"
+      when.equals:
+        shipper_id: "honeypots"
+
+    - index: "trunkpod-packets-%{+yyyy.MM.dd}"
+      when.equals:
+        shipper_id: "tshark-fields"
