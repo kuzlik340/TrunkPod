@@ -96,7 +96,7 @@ vlans:
 
 ---
 
-### BPF filter
+### Low-level logging configuration
 
 After creating both config files, generate the BPF filter for the traffic parser:
 ```bash
@@ -112,7 +112,13 @@ Example output:
 "(arp and (host 192.168.20.60 or host 192.168.30.70))"
 ```
 
-Paste the output into `logging/low_level_logging/traffic_parser.c`, then build:
+Paste the output into `logging/low_level_logging/traffic_parser.c`,
+Install tools for the logger:
+```bash
+sudo apt install build-essential libpcap-dev make
+```
+
+then build:
 ```bash
 make
 ```
