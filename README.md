@@ -148,6 +148,10 @@ This will:
 6. Setup all networking for the honeypots
 7. Deploy all honeypots defined in `honeypots.yaml`
 
+> For a full list of available flags run `sudo ./TrunkPod.sh --help`
+
+> **Note:** Clean flags (`--clean`, `--clean-build-logs`, `--clean-honeypot-logs`) cannot be combined with other flags — the script will stop after cleaning. Simply rerun with your intended flags afterwards.
+
 ---
 
 ## Logging
