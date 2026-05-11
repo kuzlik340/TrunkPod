@@ -71,7 +71,7 @@
 /* Total number of output columns */
 #define NUM_COLS      22
 
-/* ─── Globals ────────────────────────────────────────────────────────────── */
+/************** Globals *************/
 
 static pcap_t *g_handle  = NULL;
 static FILE   *g_logfile = NULL;
@@ -81,7 +81,7 @@ static size_t g_current_size = 0;    // tracked size
 static int    g_rotate_index = 0;
 static time_t g_last_flush = 0;
 
-/* ─── Row struct ─────────────────────────────────────────────────────────── */
+/************** Row struct *************/
 
 /*
  * Each field is a small fixed-size string.
@@ -128,7 +128,7 @@ enum {
 
 struct pcap_stat stats;
 
-/* ─── Output ─────────────────────────────────────────────────────────────── */
+/************* Output *************/
 
 static size_t row_print(FILE *f, const row_t *r)
 {
@@ -184,7 +184,7 @@ static void rotate_logs(void)
     g_current_size = 0;
     fprintf(stderr, "[*] Log rotated (index now %d)\n", g_rotate_index);
 }
-/* ─── File management ────────────────────────────────────────────────────── */
+/************** File management *************/
 
 static FILE *open_logfile(const char *path)
 {
@@ -201,7 +201,7 @@ static FILE *open_logfile(const char *path)
     return fh;
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
+/************** Helpers **************/
 
 static void set_mac(row_t *r, int col, const uint8_t *mac)
 {
@@ -210,7 +210,7 @@ static void set_mac(row_t *r, int col, const uint8_t *mac)
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
-/* ─── Transport parsers ──────────────────────────────────────────────────── */
+/************** Transport parsers **************/
 
 static void parse_udp(row_t *r, const uint8_t *data, int len)
 {
@@ -244,7 +244,7 @@ static void parse_icmp(row_t *r, const uint8_t *data, int len)
     snprintf(r->f[C_ICMP_CODE], sizeof(r->f[C_ICMP_CODE]), "%u", icmp->code);
 }
 
-/* ─── ARP parser ─────────────────────────────────────────────────────────── */
+/************** ARP parser ***************/
 
 static void parse_arp(row_t *r, const uint8_t *data, int len)
 {
@@ -264,7 +264,7 @@ static void parse_arp(row_t *r, const uint8_t *data, int len)
              "%u.%u.%u.%u", data[24],data[25],data[26],data[27]);
 }
 
-/* ─── VLAN (802.1Q) ──────────────────────────────────────────────────────── */
+/************** VLAN (802.1Q) **************/
 
 static uint16_t parse_vlan(row_t *r, const uint8_t *tag, int len)
 {
@@ -280,7 +280,7 @@ static uint16_t parse_vlan(row_t *r, const uint8_t *tag, int len)
     return inner_type;
 }
 
-/* ─── IP dispatchers ─────────────────────────────────────────────────────── */
+/*************** IPv4 parser ***************/
 
 static void parse_ipv4(row_t *r, const uint8_t *data, int len)
 {
@@ -308,7 +308,7 @@ static void parse_ipv4(row_t *r, const uint8_t *data, int len)
     }
 }
 
-/* ─── Main packet callback ───────────────────────────────────────────────── */
+/************** Main packet callback **************/
 
 static void packet_handler(u_char *u,
                             const struct pcap_pkthdr *hdr,
@@ -360,7 +360,7 @@ static void packet_handler(u_char *u,
         rotate_logs();
 }
 
-/* ─── Signal handler ─────────────────────────────────────────────────────── */
+/*************** Signal handler ***************/
 
 static void handle_signal(int sig)
 {
@@ -368,7 +368,7 @@ static void handle_signal(int sig)
     if (g_handle) pcap_breakloop(g_handle);
 }
 
-/* ─── Entry point ────────────────────────────────────────────────────────── */
+/*************** Entry point ***************/
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
 
     char errbuf[PCAP_ERRBUF_SIZE];
 
-    /* ─── Detect existing rotated logs ─── */
+    /*************** Detect existing rotated logs ***************/
     {
         char probe[600];
         g_rotate_index = 0;
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
     /* Increase stdio buffer (important for throughput) */
     setvbuf(g_logfile, NULL, _IOFBF, 1 << 20); // 1 MB buffer
 
-    /* ─── libpcap setup (correct modern API) ─── */
+    /* libpcap setup */
     pcap_t *h = pcap_create(iface, errbuf);
     if (!h) {
         fprintf(stderr, "pcap_create(%s) failed: %s\n", iface, errbuf);
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 
     g_handle = h;
 
-    /* ─── Validate link type ─── */
+    /* Validate link type */
     if (pcap_datalink(g_handle) != DLT_EN10MB) {
         fprintf(stderr, "Interface %s is not Ethernet\n", iface);
         pcap_close(g_handle);
@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    /* ─── Apply BPF filter ─── */
+    /* Apply BPF filter */
     if (strlen(BPF_FILTER) > 0) {
         struct bpf_program fp;
         if (pcap_compile(g_handle, &fp, BPF_FILTER, 1,
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
         pcap_freecode(&fp);
     }
 
-    /* ─── Signals ─── */
+    /* Signals */
     signal(SIGINT,  handle_signal);
     signal(SIGTERM, handle_signal);
 
