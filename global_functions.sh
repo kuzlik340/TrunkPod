@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# =================================================
+# Global utility functions shared across multiple |
+# modules. Most functions provide standardized    |
+# output formatting and common helper routines.   |
+# =================================================
+
 HONEYPOT_CONF="$PROJECT_ROOT/configs/honeypots.yaml"
 NETWORK_CONF="$PROJECT_ROOT/configs/network.yaml"
 

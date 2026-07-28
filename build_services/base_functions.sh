@@ -1,3 +1,4 @@
+#!/bin/bash
 
 logfile="$PROJECT_ROOT"/build_services/trunkpod_build_current.log
 

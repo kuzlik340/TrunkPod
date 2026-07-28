@@ -5,6 +5,7 @@
 # already in use in the network where honeypot |
 # will be added                                |
 # ==============================================
+
 set -euo pipefail
 
 source "$PROJECT_ROOT"/global_functions.sh

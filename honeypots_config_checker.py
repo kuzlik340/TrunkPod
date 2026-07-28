@@ -1,3 +1,10 @@
+# =================================================
+# Validates honeypots.yaml to ensure there are no |
+# port conflicts, duplicate MAC/IP addresses, or  |
+# other network configuration conflicts between   |
+# honeypot instances.                             |
+# =================================================
+
 import yaml
 import sys
 import os

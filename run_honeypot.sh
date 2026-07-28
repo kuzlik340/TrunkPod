@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ====================================================
+# Main module for starting pre-built pods/containers.|
+# Configure instance settings here to make them      |
+# more restrictive or secure.                        |
+# ====================================================
+
 mkdir -p /var/log/trunkpod/"$1"
 
 podman run -d --name "$1" --replace \

@@ -1,4 +1,12 @@
 #!/bin/bash
+
+# ===================================================
+# Module responsible for generating and managing    |
+# honeytokens. It creates fake credentials and      |
+# secrets, then exports them in both human-readable |
+# and JSON formats.                                 |
+# ===================================================
+
 set -Eeuo pipefail
 
 source "$PROJECT_ROOT"/global_functions.sh

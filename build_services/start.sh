@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -uo pipefail
 
 IMAGE_NAME="$1"
