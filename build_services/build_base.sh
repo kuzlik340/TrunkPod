@@ -19,7 +19,7 @@ run_buildah run --network host "$ctr" -- bash -c "
     apt-get update &&
     apt-get install -y --no-install-recommends \
         bash ca-certificates supervisor \
-        python3 python3-pip python3-virtualenv python3.13-venv \
+        python3 python3-pip python3-virtualenv python3-venv \
         openssh-server openssl \
         && apt-get clean && rm -rf /var/lib/apt/lists/*
 "
